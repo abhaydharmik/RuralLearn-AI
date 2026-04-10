@@ -31,7 +31,7 @@ export function AnalyticsPage() {
   const hasResults = progress.completedQuizzes > 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <PageHeader
         eyebrow="Analytics"
         title="Learning performance insights"
@@ -49,7 +49,7 @@ export function AnalyticsPage() {
         <SkillRadarChart topicBreakdown={progress.topicBreakdown} />
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+      <section className="grid gap-6 xl:grid-cols-[minmax(320px,0.92fr)_minmax(0,1.08fr)]">
         <Card>
           <CardHeader>
             <CardTitle>Weak topic watchlist</CardTitle>
@@ -59,9 +59,9 @@ export function AnalyticsPage() {
               progress.weakTopics.map((topic, index) => (
                 <div
                   key={topic}
-                  className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-4"
+                  className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-4 sm:flex-row sm:items-center sm:justify-between"
                 >
-                  <div>
+                  <div className="min-w-0">
                     <p className="font-semibold text-white">{topic}</p>
                     <p className="mt-1 text-sm text-slate-400">
                       Add guided tutoring prompts and one short revision quiz.
@@ -89,9 +89,9 @@ export function AnalyticsPage() {
               progress.recentResults.map((entry) => (
                 <div
                   key={entry.id}
-                  className="grid gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-4 md:grid-cols-[1fr_auto_auto]"
+                  className="grid gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-4 md:grid-cols-[1fr_auto_auto]"
                 >
-                  <div>
+                  <div className="min-w-0">
                     <p className="font-semibold text-white">{entry.topic}</p>
                     <p className="mt-1 text-sm text-slate-400">
                       Submitted on {new Date(entry.submittedAt).toLocaleString()}

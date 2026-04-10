@@ -66,7 +66,7 @@ export function QuizPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <PageHeader
         eyebrow="Quiz Lab"
         title="Generate adaptive practice sets"
@@ -75,7 +75,7 @@ export function QuizPage() {
       />
 
       <Card>
-        <CardContent className="grid gap-4 p-6 lg:grid-cols-[1fr_auto] lg:items-end">
+        <CardContent className="grid gap-4 p-5 sm:p-6 xl:grid-cols-[1fr_auto] xl:items-end">
           <div className="space-y-2">
             <label className="text-sm text-slate-300">Topic</label>
             <Input
@@ -84,7 +84,7 @@ export function QuizPage() {
               placeholder="Enter a topic like fractions or photosynthesis"
             />
           </div>
-          <Button onClick={handleGenerateQuiz} disabled={loading}>
+          <Button className="w-full xl:w-auto" onClick={handleGenerateQuiz} disabled={loading}>
             {loading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
             Generate 5 MCQs
           </Button>
@@ -93,12 +93,12 @@ export function QuizPage() {
 
       {!quiz ? (
         <Card className="border-dashed">
-          <CardContent className="flex min-h-[300px] flex-col items-center justify-center gap-4 p-8 text-center">
+          <CardContent className="flex min-h-[280px] flex-col items-center justify-center gap-4 p-6 text-center sm:min-h-[320px] sm:p-8">
             <div className="rounded-full bg-primary/10 p-4 text-primary">
               <BrainCircuit className="h-8 w-8" />
             </div>
             <div>
-              <h2 className="text-2xl font-semibold text-white">Start a personalized quiz</h2>
+              <h2 className="text-xl font-semibold text-white sm:text-2xl">Start a personalized quiz</h2>
               <p className="mt-2 max-w-xl text-sm text-slate-400">
                 The generator creates five MCQs with answers and explanations, tuned to the
                 student&apos;s current performance level.
@@ -110,7 +110,7 @@ export function QuizPage() {
         <div className="space-y-5">
           <Card>
             <CardHeader>
-              <CardTitle>{`${quiz.topic} quiz`}</CardTitle>
+              <CardTitle className="break-words">{`${quiz.topic} quiz`}</CardTitle>
               <p className="text-sm text-slate-400">
                 Difficulty: {quiz.difficulty}. Answer all questions, then submit for feedback.
               </p>
@@ -127,8 +127,8 @@ export function QuizPage() {
             />
           ))}
 
-          <div className="flex justify-end">
-            <Button onClick={handleSubmit} disabled={loading}>
+          <div className="flex justify-stretch sm:justify-end">
+            <Button className="w-full sm:w-auto" onClick={handleSubmit} disabled={loading}>
               {loading ? "Submitting..." : "Submit quiz"}
             </Button>
           </div>

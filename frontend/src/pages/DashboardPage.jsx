@@ -30,7 +30,7 @@ export function DashboardPage() {
   const hasResults = progress.completedQuizzes > 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <PageHeader
         eyebrow="Dashboard"
         title={`Hello, ${user?.fullName?.split(" ")[0] || "Student"}`}
@@ -38,7 +38,7 @@ export function DashboardPage() {
         badge={`Current difficulty: ${progress.currentDifficulty}`}
       />
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           icon={CircleGauge}
           label="Accuracy"
@@ -65,12 +65,12 @@ export function DashboardPage() {
         />
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.18fr)_minmax(320px,0.82fr)]">
         <AccuracyTrendChart weeklyAccuracy={progress.weeklyAccuracy} />
         <AccuracyGauge accuracy={progress.accuracy} />
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1fr_0.9fr]">
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.9fr)]">
         <Card>
           <CardHeader>
             <CardTitle>Priority learning areas</CardTitle>
@@ -83,8 +83,8 @@ export function DashboardPage() {
                 .slice(0, 3)
                 .map((entry, index) => (
                   <div key={entry.topic} className="rounded-3xl border border-white/10 bg-white/5 p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
                         <p className="font-semibold text-white">{entry.topic}</p>
                         <p className="mt-1 text-sm text-slate-400">
                           Focus on short examples and one follow-up practice question.
@@ -114,9 +114,9 @@ export function DashboardPage() {
               progress.recentResults.map((entry) => (
                 <div
                   key={entry.id}
-                  className="flex items-center justify-between rounded-3xl border border-white/10 bg-white/5 p-4"
+                  className="flex flex-col gap-3 rounded-3xl border border-white/10 bg-white/5 p-4 sm:flex-row sm:items-center sm:justify-between"
                 >
-                  <div>
+                  <div className="min-w-0">
                     <p className="font-semibold text-white">{entry.topic}</p>
                     <p className="mt-1 text-sm text-slate-400">
                       {new Date(entry.submittedAt).toLocaleDateString()}

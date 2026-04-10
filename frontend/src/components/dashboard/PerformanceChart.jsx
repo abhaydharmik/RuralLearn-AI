@@ -73,7 +73,7 @@ export function AccuracyTrendChart({ weeklyAccuracy }) {
         <CardTitle>Weekly learning momentum</CardTitle>
         <CardDescription>Track how accuracy changes as the student keeps practicing.</CardDescription>
       </CardHeader>
-      <CardContent className="h-[280px]">
+      <CardContent className="h-[260px] sm:h-[300px]">
         <Line data={data} options={baseOptions} />
       </CardContent>
     </Card>
@@ -98,7 +98,7 @@ export function AccuracyGauge({ accuracy }) {
         <CardTitle>Current accuracy</CardTitle>
         <CardDescription>A quick snapshot of overall quiz performance.</CardDescription>
       </CardHeader>
-      <CardContent className="h-[280px]">
+      <CardContent className="h-[260px] sm:h-[300px]">
         <Doughnut
           data={data}
           options={{
@@ -125,7 +125,7 @@ export function TopicBarChart({ topicBreakdown }) {
           <CardTitle>Topic performance</CardTitle>
           <CardDescription>Identify strong and weak areas across subjects.</CardDescription>
         </CardHeader>
-        <CardContent className="flex h-[300px] items-center justify-center text-center text-sm text-slate-400">
+        <CardContent className="flex h-[260px] items-center justify-center text-center text-sm text-slate-400 sm:h-[300px]">
           Topic insights will appear here after the student submits quizzes.
         </CardContent>
       </Card>
@@ -150,7 +150,7 @@ export function TopicBarChart({ topicBreakdown }) {
         <CardTitle>Topic performance</CardTitle>
         <CardDescription>Identify strong and weak areas across subjects.</CardDescription>
       </CardHeader>
-      <CardContent className="h-[300px]">
+      <CardContent className="h-[260px] sm:h-[300px]">
         <Bar data={data} options={baseOptions} />
       </CardContent>
     </Card>
@@ -165,7 +165,7 @@ export function SkillRadarChart({ topicBreakdown }) {
           <CardTitle>Skill radar</CardTitle>
           <CardDescription>Visualize balance across the student learning journey.</CardDescription>
         </CardHeader>
-        <CardContent className="flex h-[300px] items-center justify-center text-center text-sm text-slate-400">
+        <CardContent className="flex h-[260px] items-center justify-center text-center text-sm text-slate-400 sm:h-[300px]">
           The radar view will unlock after the first few quiz results.
         </CardContent>
       </Card>
@@ -190,7 +190,7 @@ export function SkillRadarChart({ topicBreakdown }) {
         <CardTitle>Skill radar</CardTitle>
         <CardDescription>Visualize balance across the student learning journey.</CardDescription>
       </CardHeader>
-      <CardContent className="h-[300px]">
+      <CardContent className="h-[260px] sm:h-[300px]">
         <Radar
           data={data}
           options={{

@@ -7,7 +7,7 @@ export function QuizQuestionCard({ question, index, selectedAnswer, onSelect }) 
   return (
     <Card className="animated-enter">
       <CardHeader>
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
           <CardTitle className="text-lg">{`Question ${index + 1}`}</CardTitle>
           {selectedAnswer ? (
             <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs text-primary">
@@ -16,7 +16,7 @@ export function QuizQuestionCard({ question, index, selectedAnswer, onSelect }) 
             </span>
           ) : null}
         </div>
-        <p className="text-base text-slate-200">{question.question}</p>
+        <p className="break-words text-base text-slate-200">{question.question}</p>
       </CardHeader>
       <CardContent className="grid gap-3">
         {question.options.map((option) => {
@@ -27,7 +27,7 @@ export function QuizQuestionCard({ question, index, selectedAnswer, onSelect }) 
               type="button"
               onClick={() => onSelect(question.id, option)}
               className={cn(
-                "rounded-2xl border px-4 py-3 text-left text-sm transition",
+                "break-words rounded-2xl border px-4 py-3 text-left text-sm transition",
                 isActive
                   ? "border-primary bg-primary/15 text-white"
                   : "border-white/10 bg-white/5 text-slate-300 hover:border-primary/35 hover:bg-white/10",
@@ -58,11 +58,13 @@ export function QuizResultCard({ result }) {
         <div className="space-y-3">
           {result.questionReview.map((entry, index) => (
             <div key={entry.question} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <p className="font-medium text-white">{`${index + 1}. ${entry.question}`}</p>
+              <p className="break-words font-medium text-white">{`${index + 1}. ${entry.question}`}</p>
               <p className="mt-2 text-sm text-slate-300">
                 Your answer: {entry.selectedAnswer || "Not answered"}
               </p>
-              <p className="mt-1 text-sm text-emerald-300">Correct answer: {entry.correctAnswer}</p>
+              <p className="mt-1 break-words text-sm text-emerald-300">
+                Correct answer: {entry.correctAnswer}
+              </p>
               <p className="mt-2 text-sm text-slate-400">{entry.explanation}</p>
             </div>
           ))}

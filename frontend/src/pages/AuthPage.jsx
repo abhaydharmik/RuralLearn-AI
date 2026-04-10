@@ -68,26 +68,26 @@ export function AuthPage() {
     <div className="relative min-h-screen overflow-hidden px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-7xl items-center gap-8 lg:grid-cols-[1.1fr_0.9fr]">
         <section className="animated-enter space-y-8">
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm text-primary">
+          <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-xs text-primary sm:text-sm">
             <span className="h-2 w-2 rounded-full bg-primary" />
             SDG 4 Learning Platform
           </div>
 
           <div className="space-y-5">
-            <h1 className="max-w-3xl text-5xl font-bold leading-tight text-white md:text-6xl">
+            <h1 className="max-w-3xl text-4xl font-bold leading-tight text-white sm:text-5xl md:text-6xl">
               Personalized AI learning built for students who deserve more support.
             </h1>
-            <p className="max-w-2xl text-lg text-slate-300">
+            <p className="max-w-2xl text-base text-slate-300 sm:text-lg">
               RuralLearn AI combines tutoring, quizzes, and analytics into a calm, modern learning
               workspace that feels like a real education SaaS product.
             </p>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
             {highlights.map((item) => (
               <Card key={item.title} className="border-white/10 bg-white/5">
                 <CardContent className="space-y-4 p-5">
-                  <div className="inline-flex rounded-2xl bg-primary/10 p-3 text-primary">
+                  <div className="inline-flex rounded-2xl bg-primary/10 p-3 text-primary mt-4">
                     <item.icon className="h-5 w-5" />
                   </div>
                   <div>
@@ -102,7 +102,7 @@ export function AuthPage() {
 
         <Card className="animated-enter overflow-hidden border-white/10">
           <CardContent className="p-0">
-            <div className="border-b border-white/10 bg-white/5 p-6">
+            <div className="border-b border-white/10 bg-white/5 p-4 sm:p-6">
               <div className="flex rounded-2xl bg-slate-950/60 p-1">
                 <button
                   type="button"
@@ -125,12 +125,12 @@ export function AuthPage() {
               </div>
             </div>
 
-            <form className="space-y-5 p-6" onSubmit={handleSubmit}>
+            <form className="space-y-5 p-4 sm:p-6" onSubmit={handleSubmit}>
               <div>
                 <p className="text-sm uppercase tracking-[0.25em] text-primary/70">
                   {isSignup ? "Create account" : "Welcome back"}
                 </p>
-                <h2 className="mt-2 text-2xl font-semibold text-white">
+                <h2 className="mt-2 text-xl font-semibold text-white sm:text-2xl">
                   {isSignup ? "Start the learning journey" : "Continue learning"}
                 </h2>
               </div>

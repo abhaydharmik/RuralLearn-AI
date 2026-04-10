@@ -22,12 +22,14 @@ function SidebarContent({ user, onClose, onLogout }) {
   }, [location.pathname]);
 
   return (
-    <div className="flex h-full flex-col justify-between p-5">
-      <div className="space-y-6">
+    <div className="flex h-full min-h-0 flex-col overflow-y-auto p-4 sm:p-5">
+      <div className="space-y-5">
         <div className="flex items-center justify-between rounded-[28px] border border-white/10 bg-white/5 p-4">
-          <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-primary/70">RuralLearn AI</p>
-            <h2 className="mt-2 text-xl font-semibold text-white">Learning OS</h2>
+          <div className="min-w-0">
+            <p className="text-[11px] uppercase tracking-[0.22em] text-primary/70 sm:text-xs sm:tracking-[0.3em]">
+              RuralLearn AI
+            </p>
+            <h2 className="mt-2 text-lg font-semibold text-white sm:text-xl">Learning OS</h2>
           </div>
           <Button className="lg:hidden" size="icon" variant="ghost" onClick={onClose}>
             <X className="h-5 w-5" />
@@ -37,12 +39,12 @@ function SidebarContent({ user, onClose, onLogout }) {
         <div className="rounded-[28px] border border-primary/20 bg-primary/10 p-4">
           <p className="text-xs uppercase tracking-[0.25em] text-primary/70">Focus today</p>
           <p className="mt-3 text-lg font-semibold text-white">{activeLabel}</p>
-          <p className="mt-2 text-sm text-slate-300">
+          <p className="mt-2 text-xs text-slate-300">
             Keep explanations simple, practice regularly, and grow with each quiz.
           </p>
         </div>
 
-        <nav className="space-y-2">
+        <nav className="space-y-2 rounded-[28px] border border-white/10 bg-white/[0.03] p-3">
           {navigation.map((item) => (
             <NavLink
               key={item.to}
@@ -52,7 +54,7 @@ function SidebarContent({ user, onClose, onLogout }) {
                 cn(
                   "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition",
                   isActive
-                    ? "bg-white text-slate-950"
+                    ? "bg-white text-slate-950 shadow-lg shadow-white/5"
                     : "text-slate-300 hover:bg-white/5 hover:text-white",
                 )
               }
@@ -64,7 +66,7 @@ function SidebarContent({ user, onClose, onLogout }) {
         </nav>
       </div>
 
-      <div className="rounded-[28px] border border-white/10 bg-white/5 p-4">
+      <div className=" rounded-[28px] border border-white/10 bg-white/5 p-4 mt-4 lg:mt-4">
         <div className="flex items-center gap-3">
           <Avatar name={user?.fullName} />
           <div className="min-w-0">
@@ -84,20 +86,44 @@ function SidebarContent({ user, onClose, onLogout }) {
   );
 }
 
+function MobileBottomNav() {
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-slate-950/90 px-3 pb-[calc(env(safe-area-inset-bottom)+0.6rem)] pt-3 backdrop-blur lg:hidden">
+      <nav className="mx-auto grid max-w-md grid-cols-4 gap-2 rounded-[24px] border border-white/10 bg-white/[0.03] p-2">
+        {navigation.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            className={({ isActive }) =>
+              cn(
+                "flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[11px] font-medium transition",
+                isActive ? "bg-white text-slate-950" : "text-slate-300 hover:bg-white/5 hover:text-white",
+              )
+            }
+          >
+            <item.icon className="h-4 w-4" />
+            <span className="truncate">{item.label}</span>
+          </NavLink>
+        ))}
+      </nav>
+    </div>
+  );
+}
+
 export function AppShell({ user, onLogout, children }) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-transparent">
-      <div className="mx-auto flex min-h-screen max-w-[1600px]">
-        <aside className="hidden w-[320px] border-r border-white/10 bg-slate-950/70 lg:block">
+    <div className="min-h-screen overflow-x-hidden bg-transparent lg:h-screen lg:overflow-hidden">
+      <div className="mx-auto flex min-h-screen max-w-[1600px] lg:h-screen">
+        <aside className="hidden border-r border-white/10 bg-slate-950/70 lg:block lg:h-screen lg:w-[272px] lg:flex-shrink-0">
           <SidebarContent user={user} onLogout={onLogout} />
         </aside>
 
         {isOpen ? (
           <div className="fixed inset-0 z-50 lg:hidden">
             <div className="absolute inset-0 bg-slate-950/80" onClick={() => setIsOpen(false)} />
-            <aside className="absolute left-0 top-0 h-full w-[300px] border-r border-white/10 bg-slate-950">
+            <aside className="absolute left-0 top-0 h-full w-[min(85vw,300px)] border-r border-white/10 bg-slate-950">
               <SidebarContent
                 user={user}
                 onLogout={onLogout}
@@ -107,12 +133,16 @@ export function AppShell({ user, onLogout, children }) {
           </div>
         ) : null}
 
-        <main className="flex-1">
+        <main className="min-w-0 flex-1 lg:flex lg:h-screen lg:flex-col">
           <div className="sticky top-0 z-20 border-b border-white/10 bg-slate-950/40 backdrop-blur">
-            <div className="flex items-center justify-between px-4 py-4 sm:px-6 lg:px-10">
-              <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-primary/80">Student Workspace</p>
-                <h1 className="mt-1 text-lg font-semibold text-white">Personalized Learning Suite</h1>
+            <div className="mx-auto flex w-full max-w-[1120px] items-center justify-between px-4 py-4 sm:px-6 xl:max-w-[1180px]">
+              <div className="min-w-0 pr-3">
+                <p className="text-[11px] uppercase tracking-[0.18em] text-primary/80 sm:text-xs sm:tracking-[0.3em]">
+                  Student Workspace
+                </p>
+                <h1 className="mt-1 text-base font-semibold text-white sm:text-lg">
+                  Personalized Learning Suite
+                </h1>
               </div>
               <Button className="lg:hidden" size="icon" variant="secondary" onClick={() => setIsOpen(true)}>
                 <Menu className="h-5 w-5" />
@@ -120,9 +150,14 @@ export function AppShell({ user, onLogout, children }) {
             </div>
           </div>
 
-          <div className="px-4 py-6 sm:px-6 lg:px-10 lg:py-8">{children}</div>
+          <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+            <div className="mx-auto w-full max-w-[1120px] px-4 py-6 pb-28 sm:px-6 sm:pb-8 lg:py-8 xl:max-w-[1180px]">
+              {children}
+            </div>
+          </div>
         </main>
       </div>
+      <MobileBottomNav />
     </div>
   );
 }

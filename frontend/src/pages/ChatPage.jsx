@@ -83,7 +83,7 @@ export function ChatPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <PageHeader
         eyebrow="AI Tutor"
         title="Conversational learning support"
@@ -91,8 +91,8 @@ export function ChatPage() {
         badge={`Adaptive mode: ${difficulty}`}
       />
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
-        <Card className="min-h-[72vh]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
+        <Card className="min-h-[58vh] lg:min-h-[62vh] xl:min-h-[68vh]">
           <CardContent className="flex h-full flex-col p-4 sm:p-6">
             <div className="flex-1 space-y-4 overflow-y-auto pr-1">
               {messages.map((message) => (
@@ -113,8 +113,8 @@ export function ChatPage() {
                 onChange={(event) => setQuestion(event.target.value)}
               />
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm text-slate-400">{helperText}</p>
-                <Button type="submit" disabled={sending}>
+                <p className="max-w-xl text-sm leading-6 text-slate-400">{helperText}</p>
+                <Button className="w-full sm:w-auto" type="submit" disabled={sending}>
                   <SendHorizonal className="h-4 w-4" />
                   Send question
                 </Button>
@@ -123,7 +123,7 @@ export function ChatPage() {
           </CardContent>
         </Card>
 
-        <div className="space-y-6">
+        <div className="space-y-6 xl:sticky xl:top-24 xl:self-start">
           <Card>
             <CardContent className="space-y-4 p-6">
               <div className="flex items-center gap-3">

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from fastapi import Depends, Header
+from fastapi import Depends, Header # type: ignore
 
 from app.config import get_settings
 from app.dependencies import get_repository, get_supabase_auth_client

@@ -5,9 +5,16 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { QuizQuestionCard, QuizResultCard } from "@/components/quiz/QuizQuestionCard";
+import {
+  QuizQuestionCard,
+  QuizResultCard,
+} from "@/components/quiz/QuizQuestionCard";
 import { useAuth } from "@/context/AuthContext";
-import { createQuiz, fetchProgress, submitQuiz } from "@/services/learningService";
+import {
+  createQuiz,
+  fetchProgress,
+  submitQuiz,
+} from "@/services/learningService";
 
 export function QuizPage() {
   const { user } = useAuth();
@@ -23,7 +30,9 @@ export function QuizPage() {
       return;
     }
 
-    fetchProgress(user.id).then((data) => setDifficulty(data.currentDifficulty));
+    fetchProgress(user.id).then((data) =>
+      setDifficulty(data.currentDifficulty),
+    );
   }, [user?.id]);
 
   const handleGenerateQuiz = async () => {
@@ -32,6 +41,13 @@ export function QuizPage() {
 
     try {
       const generatedQuiz = await createQuiz({ topic, difficulty, userId: user?.id });
+
+      if (!generatedQuiz?.questions || generatedQuiz.questions.length !== 5) {
+        console.warn("Invalid quiz received");
+        setQuiz(null);
+        return;
+      }
+
       setQuiz(generatedQuiz);
       setAnswers({});
     } finally {
@@ -84,8 +100,16 @@ export function QuizPage() {
               placeholder="Enter a topic like fractions or photosynthesis"
             />
           </div>
-          <Button className="w-full xl:w-auto" onClick={handleGenerateQuiz} disabled={loading}>
-            {loading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+          <Button
+            className="w-full xl:w-auto"
+            onClick={handleGenerateQuiz}
+            disabled={loading}
+          >
+            {loading ? (
+              <LoaderCircle className="h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="h-4 w-4" />
+            )}
             Generate 5 MCQs
           </Button>
         </CardContent>
@@ -98,10 +122,12 @@ export function QuizPage() {
               <BrainCircuit className="h-8 w-8" />
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-white sm:text-2xl">Start a personalized quiz</h2>
+              <h2 className="text-xl font-semibold text-white sm:text-2xl">
+                Start a personalized quiz
+              </h2>
               <p className="mt-2 max-w-xl text-sm text-slate-400">
-                The generator creates five MCQs with answers and explanations, tuned to the
-                student&apos;s current performance level.
+                The generator creates five MCQs with answers and explanations,
+                tuned to the student&apos;s current performance level.
               </p>
             </div>
           </CardContent>
@@ -112,23 +138,34 @@ export function QuizPage() {
             <CardHeader>
               <CardTitle className="break-words">{`${quiz.topic} quiz`}</CardTitle>
               <p className="text-sm text-slate-400">
-                Difficulty: {quiz.difficulty}. Answer all questions, then submit for feedback.
+                Difficulty: {quiz.difficulty}. Answer all questions, then submit
+                for feedback.
               </p>
             </CardHeader>
           </Card>
 
-          {quiz.questions.map((question, index) => (
-            <QuizQuestionCard
-              key={question.id}
-              index={index}
-              question={question}
-              selectedAnswer={answers[question.id]}
-              onSelect={handleSelectAnswer}
-            />
-          ))}
+          {quiz?.questions?.length > 0 ? (
+            quiz.questions.map((question, index) => (
+              <QuizQuestionCard
+                key={question.id}
+                index={index}
+                question={question}
+                selectedAnswer={answers[question.id]}
+                onSelect={handleSelectAnswer}
+              />
+            ))
+          ) : (
+            <p className="text-center text-slate-400">
+              No questions generated. Try again.
+            </p>
+          )}
 
           <div className="flex justify-stretch sm:justify-end">
-            <Button className="w-full sm:w-auto" onClick={handleSubmit} disabled={loading}>
+            <Button
+              className="w-full sm:w-auto"
+              onClick={handleSubmit}
+              disabled={loading}
+            >
               {loading ? "Submitting..." : "Submit quiz"}
             </Button>
           </div>

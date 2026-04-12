@@ -1,7 +1,7 @@
 from enum import Enum
 from uuid import uuid4
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator # type: ignore
 
 from app.models.base import APIModel
 

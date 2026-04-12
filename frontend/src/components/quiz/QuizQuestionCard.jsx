@@ -23,7 +23,7 @@ export function QuizQuestionCard({ question, index, selectedAnswer, onSelect }) 
           const isActive = selectedAnswer === option;
           return (
             <button
-              key={option}
+              key={`${question.id}-${option}`}
               type="button"
               onClick={() => onSelect(question.id, option)}
               className={cn(

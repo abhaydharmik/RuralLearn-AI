@@ -6,7 +6,7 @@ TUTOR_PROMPT = (
 QUIZ_PROMPT = (
     "Generate 5 MCQs with answers and explanations for topic: {topic}. "
     "Return strict JSON with this shape: "
-    '{"questions":[{"question":"...","options":["A","B","C","D"],"correctAnswer":"...","explanation":"..."}]}. '
+    '{{"questions":[{{"question":"...","options":["A","B","C","D"],"correctAnswer":"...","explanation":"..."}}]}}. '
     "The questions should match {difficulty} difficulty and be suitable for rural students."
 )
 

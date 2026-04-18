@@ -25,6 +25,6 @@ class ProgressResponse(APIModel):
     completed_quizzes: int = Field(..., alias="completedQuizzes")
     current_difficulty: DifficultyLevel = Field(..., alias="currentDifficulty")
     weak_topics: list[str] = Field(default_factory=list, alias="weakTopics")
-    weekly_accuracy: list[int] = Field(default_factory=list, alias="weeklyAccuracy")
+    weekly_accuracy: list[float] = Field(default_factory=list, alias="weeklyAccuracy")
     topic_breakdown: list[TopicBreakdown] = Field(default_factory=list, alias="topicBreakdown")
     recent_results: list[RecentResult] = Field(default_factory=list, alias="recentResults")

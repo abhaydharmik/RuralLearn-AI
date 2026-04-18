@@ -26,24 +26,28 @@ function normalizeSubmissionPayload(payload) {
 function normalizeProgressPayload(payload) {
   return {
     ...payload,
+    accuracy: Number(payload.accuracy || 0),
+    completedQuizzes: Number(payload.completedQuizzes || 0),
     currentDifficulty: normalizeDifficultyLabel(payload.currentDifficulty),
+    weeklyAccuracy: (payload.weeklyAccuracy || []).map((value) => Number(value || 0)),
+    topicBreakdown: payload.topicBreakdown || [],
+    weakTopics: payload.weakTopics || [],
     recentResults: (payload.recentResults || []).map((entry) => ({
       ...entry,
+      score: Number(entry.score || 0),
+      correctAnswers: Number(entry.correctAnswers || 0),
+      totalQuestions: Number(entry.totalQuestions || 0),
       difficulty: normalizeDifficultyLabel(entry.difficulty),
     })),
   };
 }
 
-export async function fetchChatHistory(userId) {
-  if (!shouldUseMockFallback()) {
-    try {
-      return await request("/api/chat/history");
-    } catch {
-      // Fall through to the mock layer so the UI remains usable.
-    }
+export async function fetchChatHistory() {
+  if (shouldUseMockFallback()) {
+    return getChatMessages();
   }
 
-  return getChatMessages();
+  return request("/api/chat/history");
 }
 
 export async function sendChatMessage({ question, difficulty, userId }) {
@@ -53,75 +57,57 @@ export async function sendChatMessage({ question, difficulty, userId }) {
     content: question,
     createdAt: new Date().toISOString(),
   };
-  saveChatMessage(userMessage);
 
-  if (!shouldUseMockFallback()) {
-    try {
-      const response = await request("/api/chat", {
-        method: "POST",
-        body: JSON.stringify({ question, difficulty: difficulty?.toLowerCase(), userId }),
-      });
-
-      const assistantMessage = {
-        id: crypto.randomUUID(),
-        role: "assistant",
-        content: response.answer,
-        createdAt: new Date().toISOString(),
-      };
-
-      saveChatMessage(assistantMessage);
-      return assistantMessage;
-    } catch {
-      // Fall through to the mock layer so the UI remains usable.
-    }
+  if (shouldUseMockFallback()) {
+    saveChatMessage(userMessage);
+    const mockReply = generateMockChatReply(question, difficulty);
+    saveChatMessage(mockReply);
+    return mockReply;
   }
 
-  const mockReply = generateMockChatReply(question, difficulty);
-  saveChatMessage(mockReply);
-  return mockReply;
+  const response = await request("/api/chat", {
+    method: "POST",
+    body: JSON.stringify({ question, difficulty: difficulty?.toLowerCase(), userId }),
+  });
+
+  return {
+    id: crypto.randomUUID(),
+    role: "assistant",
+    content: response.answer,
+    createdAt: new Date().toISOString(),
+    source: response.source,
+  };
 }
 
 export async function createQuiz({ topic, difficulty, userId }) {
-  if (!shouldUseMockFallback()) {
-    try {
-      const response = await request("/api/quiz", {
-        method: "POST",
-        body: JSON.stringify({ topic, difficulty: difficulty?.toLowerCase(), userId }),
-      });
-      return normalizeQuizPayload(response);
-    } catch {
-      // Fall through to the mock layer so the UI remains usable.
-    }
+  if (shouldUseMockFallback()) {
+    return generateMockQuiz(topic, difficulty);
   }
 
-  return generateMockQuiz(topic, difficulty);
+  const response = await request("/api/quiz", {
+    method: "POST",
+    body: JSON.stringify({ topic, difficulty: difficulty?.toLowerCase(), userId }),
+  });
+  return normalizeQuizPayload(response);
 }
 
 export async function submitQuiz({ topic, questions, answers, userId }) {
-  if (!shouldUseMockFallback()) {
-    try {
-      const response = await request("/api/submit", {
-        method: "POST",
-        body: JSON.stringify({ topic, questions, answers, userId }),
-      });
-      return normalizeSubmissionPayload(response);
-    } catch {
-      // Fall through to the mock layer so the UI remains usable.
-    }
+  if (shouldUseMockFallback()) {
+    return evaluateMockQuiz({ topic, questions, answers });
   }
 
-  return evaluateMockQuiz({ topic, questions, answers });
+  const response = await request("/api/submit", {
+    method: "POST",
+    body: JSON.stringify({ topic, questions, answers, userId }),
+  });
+  return normalizeSubmissionPayload(response);
 }
 
-export async function fetchProgress(userId) {
-  if (!shouldUseMockFallback()) {
-    try {
-      const response = await request("/api/progress");
-      return normalizeProgressPayload(response);
-    } catch {
-      // Fall through to the mock layer so the UI remains usable.
-    }
+export async function fetchProgress() {
+  if (shouldUseMockFallback()) {
+    return getMockProgress();
   }
 
-  return getMockProgress();
+  const response = await request("/api/progress");
+  return normalizeProgressPayload(response);
 }

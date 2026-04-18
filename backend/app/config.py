@@ -16,14 +16,12 @@ class Settings(BaseSettings):
 
     default_user_id: str = "demo-student"
 
-    # ✅ Gemini config
-    use_mock_ai: bool = False
-    google_api_key: str | None = None
+    # AI provider. Keep the key only in backend/.env, never in Vite/frontend env.
+    use_mock_ai: bool = True
+    groq_api_key: str | None = None
+    groq_model: str = "llama-3.3-70b-versatile"
 
-    # (not used anymore but safe to keep)
-    openai_model: str = "gpt-4.1-mini"
-
-    # Supabase (optional)
+    # Supabase
     supabase_url: str | None = None
     supabase_service_role_key: str | None = None
     supabase_anon_key: str | None = None

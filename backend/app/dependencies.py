@@ -15,10 +15,7 @@ except ImportError:  # pragma: no cover
 def get_repository():
     settings = get_settings()
     if settings.supabase_url and settings.supabase_service_role_key:
-        try:
-            return SupabaseRepository(settings)
-        except Exception:
-            return InMemoryRepository()
+        return SupabaseRepository(settings)
     return InMemoryRepository()
 
 

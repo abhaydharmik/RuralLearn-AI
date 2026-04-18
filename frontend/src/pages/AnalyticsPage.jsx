@@ -15,14 +15,28 @@ import { fetchProgress } from "@/services/learningService";
 export function AnalyticsPage() {
   const { user } = useAuth();
   const [progress, setProgress] = useState(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!user?.id) {
       return;
     }
 
-    fetchProgress(user.id).then(setProgress);
+    setError("");
+    fetchProgress(user.id)
+      .then(setProgress)
+      .catch((fetchError) => setError(fetchError.message));
   }, [user?.id]);
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="p-5 text-sm text-rose-200">
+          Analytics data could not load: {error}
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (!progress) {
     return <div className="text-sm text-slate-400">Loading analytics...</div>;

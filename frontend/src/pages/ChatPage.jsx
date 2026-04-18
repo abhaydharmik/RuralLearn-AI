@@ -23,13 +23,17 @@ export function ChatPage() {
   const [question, setQuestion] = useState("");
   const [difficulty, setDifficulty] = useState("Easy");
   const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!user?.id) {
       return;
     }
 
-    fetchChatHistory(user.id).then(setMessages);
+    setError("");
+    fetchChatHistory(user.id)
+      .then(setMessages)
+      .catch((fetchError) => setError(fetchError.message));
   }, [user?.id]);
 
   useEffect(() => {
@@ -37,7 +41,9 @@ export function ChatPage() {
       return;
     }
 
-    fetchProgress(user.id).then((data) => setDifficulty(data.currentDifficulty));
+    fetchProgress(user.id)
+      .then((data) => setDifficulty(data.currentDifficulty))
+      .catch((fetchError) => setError(fetchError.message));
   }, [user?.id]);
 
   const helperText = useMemo(() => {
@@ -68,6 +74,7 @@ export function ChatPage() {
     setMessages((current) => [...current, userMessage]);
     setQuestion("");
     setSending(true);
+    setError("");
 
     try {
       const response = await sendChatMessage({
@@ -77,6 +84,8 @@ export function ChatPage() {
       });
 
       setMessages((current) => [...current, response]);
+    } catch (sendError) {
+      setError(sendError.message);
     } finally {
       setSending(false);
     }
@@ -90,6 +99,14 @@ export function ChatPage() {
         description="Students can ask questions in simple language and receive short, beginner-friendly explanations."
         badge={`Adaptive mode: ${difficulty}`}
       />
+
+      {error ? (
+        <Card>
+          <CardContent className="p-5 text-sm text-rose-200">
+            AI Tutor could not connect: {error}
+          </CardContent>
+        </Card>
+      ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
         <Card className="min-h-[58vh] lg:min-h-[62vh] xl:min-h-[68vh]">

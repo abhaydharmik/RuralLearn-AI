@@ -24,20 +24,23 @@ export function QuizPage() {
   const [answers, setAnswers] = useState({});
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!user?.id) {
       return;
     }
 
-    fetchProgress(user.id).then((data) =>
-      setDifficulty(data.currentDifficulty),
-    );
+    setError("");
+    fetchProgress(user.id)
+      .then((data) => setDifficulty(data.currentDifficulty))
+      .catch((fetchError) => setError(fetchError.message));
   }, [user?.id]);
 
   const handleGenerateQuiz = async () => {
     setLoading(true);
     setResult(null);
+    setError("");
 
     try {
       const generatedQuiz = await createQuiz({ topic, difficulty, userId: user?.id });
@@ -50,6 +53,8 @@ export function QuizPage() {
 
       setQuiz(generatedQuiz);
       setAnswers({});
+    } catch (generateError) {
+      setError(generateError.message);
     } finally {
       setLoading(false);
     }
@@ -65,6 +70,7 @@ export function QuizPage() {
     }
 
     setLoading(true);
+    setError("");
     try {
       const submission = await submitQuiz({
         topic: quiz.topic,
@@ -76,6 +82,8 @@ export function QuizPage() {
       setResult(submission);
       const updatedProgress = await fetchProgress(user?.id);
       setDifficulty(updatedProgress.currentDifficulty);
+    } catch (submitError) {
+      setError(submitError.message);
     } finally {
       setLoading(false);
     }
@@ -114,6 +122,14 @@ export function QuizPage() {
           </Button>
         </CardContent>
       </Card>
+
+      {error ? (
+        <Card>
+          <CardContent className="p-5 text-sm text-rose-200">
+            Quiz action failed: {error}
+          </CardContent>
+        </Card>
+      ) : null}
 
       {!quiz ? (
         <Card className="border-dashed">

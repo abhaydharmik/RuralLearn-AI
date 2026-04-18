@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from fastapi import Depends, Header # type: ignore
+from fastapi import Depends, Header  # type: ignore
 
 from app.config import get_settings
 from app.dependencies import get_repository, get_supabase_auth_client
@@ -34,7 +34,11 @@ async def get_current_user(
                 status_code=503,
             )
 
-        user_response = supabase_client.auth.get_user(jwt=token)
+        try:
+            user_response = supabase_client.auth.get_user(jwt=token)
+        except Exception as exc:
+            raise AppError("Invalid or expired login token. Please sign in again.", status_code=401) from exc
+
         user = getattr(user_response, "user", None)
         if user is None:
             raise AppError("Unable to resolve the authenticated user.", status_code=401)
@@ -51,7 +55,7 @@ async def get_current_user(
         await repository.upsert_user(
             {
                 "id": authenticated_user.id,
-                "email": authenticated_user.email,
+                "email": authenticated_user.email or f"{authenticated_user.id}@supabase.local",
                 "password": None,
             }
         )

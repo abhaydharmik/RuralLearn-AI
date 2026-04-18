@@ -18,14 +18,14 @@ function mapSupabaseUser(user) {
 export async function getSessionUser() {
   if (hasSupabaseConfig) {
     const {
-      data: { user },
-    } = await supabase.auth.getUser();
+      data: { session },
+    } = await supabase.auth.getSession();
 
-    if (!user) {
+    if (!session?.user) {
       return null;
     }
 
-    return mapSupabaseUser(user);
+    return mapSupabaseUser(session.user);
   }
 
   return getCurrentMockUser();
@@ -68,6 +68,10 @@ export async function login(credentials) {
       throw new Error(error.message);
     }
 
+    if (!data.user || !data.session) {
+      throw new Error("Login did not return a valid session. Please try again.");
+    }
+
     return mapSupabaseUser(data.user);
   }
 
@@ -91,14 +95,13 @@ export async function signup(payload) {
       throw new Error(error.message);
     }
 
-    return data.user
-      ? mapSupabaseUser(data.user)
-      : {
-          id: crypto.randomUUID(),
-          email: payload.email,
-          fullName: payload.fullName,
-          school: payload.school || "Rural Community School",
-        };
+    if (!data.session) {
+      throw new Error(
+        "Signup successful. Please confirm your email in Supabase/Auth email, then sign in.",
+      );
+    }
+
+    return mapSupabaseUser(data.user);
   }
 
   return createLocalUser(payload);

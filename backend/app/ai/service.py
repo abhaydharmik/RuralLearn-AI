@@ -10,6 +10,7 @@ from groq import Groq  # type: ignore
 from app.ai.prompts import FEEDBACK_PROMPT, QUIZ_PROMPT, TUTOR_PROMPT
 from app.config import Settings
 from app.models.quiz import DifficultyLevel, QuizQuestion
+from app.models.revision import RevisionPracticeQuestion, RevisionResponse
 
 
 class TutorAIService:
@@ -115,6 +116,73 @@ class TutorAIService:
         except Exception:
             return self._mock_feedback(score), "mock"
 
+    async def generate_revision(
+        self,
+        topic: str,
+        difficulty: DifficultyLevel,
+    ) -> RevisionResponse:
+        difficulty = self._normalize_difficulty(difficulty)
+        if not self.client:
+            return self._mock_revision(topic, difficulty, "mock")
+
+        prompt = f"""
+Create a short revision plan for a beginner rural student.
+
+Topic: {topic}
+Difficulty: {difficulty.value}
+
+Return only JSON with this exact shape:
+{{
+  "summary": "4 short beginner-friendly sentences",
+  "examples": ["example 1", "example 2"],
+  "practiceQuestions": [
+    {{"question": "short question 1", "answer": "short answer 1"}},
+    {{"question": "short question 2", "answer": "short answer 2"}},
+    {{"question": "short question 3", "answer": "short answer 3"}}
+  ]
+}}
+"""
+        try:
+            raw_text = await self._chat_completion(
+                [
+                    {
+                        "role": "system",
+                        "content": "Return valid JSON only. Keep language simple and practical.",
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+                max_tokens=700,
+            )
+            parsed = self._extract_json(raw_text or "")
+            summary = str(parsed.get("summary", "")).strip()
+            examples = [
+                str(example).strip()
+                for example in parsed.get("examples", [])
+                if str(example).strip()
+            ][:3]
+            practice_questions = [
+                RevisionPracticeQuestion(
+                    question=str(item.get("question", "")).strip(),
+                    answer=str(item.get("answer", "")).strip(),
+                )
+                for item in parsed.get("practiceQuestions", [])
+                if str(item.get("question", "")).strip() and str(item.get("answer", "")).strip()
+            ][:3]
+
+            if not summary or len(practice_questions) < 3:
+                return self._mock_revision(topic, difficulty, "mock")
+
+            return RevisionResponse(
+                topic=topic,
+                difficulty=difficulty,
+                summary=summary,
+                examples=examples,
+                practiceQuestions=practice_questions,
+                source="groq",
+            )
+        except Exception:
+            return self._mock_revision(topic, difficulty, "mock")
+
     async def _chat_completion(self, messages: list[dict], max_tokens: int) -> str:
         response = await asyncio.to_thread(
             lambda: self.client.chat.completions.create(
@@ -207,6 +275,41 @@ class TutorAIService:
         if score <= 80:
             return "Nice progress. Revise the missed questions and try one medium quiz next."
         return "Excellent work. You are ready for a harder quiz with deeper examples."
+
+    def _mock_revision(
+        self,
+        topic: str,
+        difficulty: DifficultyLevel,
+        source: str,
+    ) -> RevisionResponse:
+        return RevisionResponse(
+            topic=topic,
+            difficulty=difficulty,
+            summary=(
+                f"Start {topic} with the basic meaning, then connect it to one real-life example. "
+                "Write the key idea in your own words. Practice small questions first. "
+                "After that, try one quiz again to check improvement."
+            ),
+            examples=[
+                f"Example: explain {topic} to a younger student using simple words.",
+                f"Example: solve one small {topic} question and say each step aloud.",
+            ],
+            practiceQuestions=[
+                RevisionPracticeQuestion(
+                    question=f"What is the main idea of {topic}?",
+                    answer=f"The main idea is the simple meaning or basic rule of {topic}.",
+                ),
+                RevisionPracticeQuestion(
+                    question=f"What should you do when {topic} feels hard?",
+                    answer="Break it into small steps and practice one example at a time.",
+                ),
+                RevisionPracticeQuestion(
+                    question=f"How can you remember {topic} better?",
+                    answer="Revise the explanation and try a short practice quiz.",
+                ),
+            ],
+            source=source,
+        )
 
     def _mock_quiz(self, topic: str, difficulty: DifficultyLevel) -> list[QuizQuestion]:
         return [

@@ -17,6 +17,8 @@ except ImportError:  # pragma: no cover
 class Repository(Protocol):
     async def upsert_user(self, payload: dict) -> None: ...
 
+    async def list_users(self) -> list[dict]: ...
+
     async def store_chat_message(self, payload: dict) -> None: ...
 
     async def list_chat_messages(self, user_id: str) -> list[dict]: ...
@@ -27,9 +29,13 @@ class Repository(Protocol):
 
     async def list_results(self, user_id: str) -> list[dict]: ...
 
+    async def list_all_results(self) -> list[dict]: ...
+
     async def upsert_progress(self, payload: dict) -> None: ...
 
     async def get_progress(self, user_id: str) -> dict | None: ...
+
+    async def list_progress(self) -> list[dict]: ...
 
 
 class InMemoryRepository:
@@ -42,6 +48,9 @@ class InMemoryRepository:
 
     async def upsert_user(self, payload: dict) -> None:
         self.users[payload["id"]] = deepcopy(payload)
+
+    async def list_users(self) -> list[dict]:
+        return deepcopy(list(self.users.values()))
 
     async def store_chat_message(self, payload: dict) -> None:
         self.chat_messages_by_user[payload["user_id"]].append(deepcopy(payload))
@@ -58,12 +67,21 @@ class InMemoryRepository:
     async def list_results(self, user_id: str) -> list[dict]:
         return deepcopy(self.results_by_user.get(user_id, []))
 
+    async def list_all_results(self) -> list[dict]:
+        rows: list[dict] = []
+        for results in self.results_by_user.values():
+            rows.extend(deepcopy(results))
+        return sorted(rows, key=lambda row: row.get("submitted_at") or "")
+
     async def upsert_progress(self, payload: dict) -> None:
         self.progress_by_user[payload["user_id"]] = deepcopy(payload)
 
     async def get_progress(self, user_id: str) -> dict | None:
         progress = self.progress_by_user.get(user_id)
         return deepcopy(progress) if progress else None
+
+    async def list_progress(self) -> list[dict]:
+        return deepcopy(list(self.progress_by_user.values()))
 
 
 class SupabaseRepository:
@@ -77,6 +95,10 @@ class SupabaseRepository:
 
     async def upsert_user(self, payload: dict) -> None:
         self.client.table("users").upsert(payload).execute()
+
+    async def list_users(self) -> list[dict]:
+        response = self.client.table("users").select("*").execute()
+        return response.data or []
 
     async def store_chat_message(self, payload: dict) -> None:
         self.client.table("chat_messages").insert(payload).execute()
@@ -107,6 +129,15 @@ class SupabaseRepository:
         )
         return response.data or []
 
+    async def list_all_results(self) -> list[dict]:
+        response = (
+            self.client.table("results")
+            .select("*")
+            .order("submitted_at", desc=False)
+            .execute()
+        )
+        return response.data or []
+
     async def upsert_progress(self, payload: dict) -> None:
         payload = {**payload, "updated_at": datetime.now(timezone.utc).isoformat()}
         self.client.table("progress").upsert(payload).execute()
@@ -122,3 +153,7 @@ class SupabaseRepository:
         if not response.data:
             return None
         return response.data[0]
+
+    async def list_progress(self) -> list[dict]:
+        response = self.client.table("progress").select("*").execute()
+        return response.data or []

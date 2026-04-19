@@ -6,13 +6,61 @@ import {
 } from "@/data/mockData";
 import { hasSupabaseConfig, supabase } from "@/lib/supabase";
 
+const frontendAdminEmails = (import.meta.env.VITE_ADMIN_EMAILS || "")
+  .split(",")
+  .map((email) => email.trim().toLowerCase())
+  .filter(Boolean);
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
 function mapSupabaseUser(user) {
+  const role = String(
+    user.app_metadata?.role ||
+      user.user_metadata?.role ||
+      user.user_metadata?.user_role ||
+      "student",
+  ).toLowerCase();
+  const isAdmin =
+    role === "admin" ||
+    role === "teacher" ||
+    frontendAdminEmails.includes(String(user.email || "").toLowerCase());
+
   return {
     id: user.id,
     email: user.email,
     fullName: user.user_metadata?.full_name || "Student",
     school: user.user_metadata?.school || "Connected via Supabase",
+    role: isAdmin ? "admin" : role,
+    isAdmin,
   };
+}
+
+async function applyServerProfile(user, token) {
+  if (!token) {
+    return user;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/me`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      return user;
+    }
+
+    const profile = await response.json();
+    return {
+      ...user,
+      fullName: profile.fullName || user.fullName,
+      school: profile.school || user.school,
+      role: profile.role || user.role,
+      isAdmin: Boolean(profile.isAdmin),
+    };
+  } catch {
+    return user;
+  }
 }
 
 export async function getSessionUser() {
@@ -25,7 +73,7 @@ export async function getSessionUser() {
       return null;
     }
 
-    return mapSupabaseUser(session.user);
+    return applyServerProfile(mapSupabaseUser(session.user), session.access_token);
   }
 
   return getCurrentMockUser();
@@ -51,7 +99,12 @@ export function subscribeToAuthChanges(callback) {
   const {
     data: { subscription },
   } = supabase.auth.onAuthStateChange((_event, session) => {
-    callback(session?.user ? mapSupabaseUser(session.user) : null);
+    if (!session?.user) {
+      callback(null);
+      return;
+    }
+
+    applyServerProfile(mapSupabaseUser(session.user), session.access_token).then(callback);
   });
 
   return () => subscription.unsubscribe();
@@ -72,7 +125,7 @@ export async function login(credentials) {
       throw new Error("Login did not return a valid session. Please try again.");
     }
 
-    return mapSupabaseUser(data.user);
+    return applyServerProfile(mapSupabaseUser(data.user), data.session.access_token);
   }
 
   return loginLocalUser(credentials);
@@ -87,6 +140,7 @@ export async function signup(payload) {
         data: {
           full_name: payload.fullName,
           school: payload.school || "Rural Community School",
+          role: "student",
         },
       },
     });
@@ -101,7 +155,7 @@ export async function signup(payload) {
       );
     }
 
-    return mapSupabaseUser(data.user);
+    return applyServerProfile(mapSupabaseUser(data.user), data.session.access_token);
   }
 
   return createLocalUser(payload);

@@ -6,15 +6,22 @@ from uuid import uuid4
 from app.ai.service import TutorAIService
 from app.exceptions import ValidationError
 from app.models import (
+    AdminDashboardResponse,
+    AdminStudentSummary,
     ChatMessage,
     ChatRequest,
     ChatResponse,
     ProgressResponse,
     QuestionReview,
+    QuizHistoryItem,
+    QuizHistoryResponse,
     QuizRequest,
     QuizResponse,
     QuizSubmissionRequest,
     QuizSubmissionResponse,
+    RevisionRequest,
+    RevisionResponse,
+    WeakTopicCount,
 )
 from app.models.quiz import DifficultyLevel, QuizQuestion
 from app.services.personalization import resolve_difficulty
@@ -184,6 +191,111 @@ class LearningService:
         results = await self.repository.list_results(user_id)
         return self._build_progress(user_id, results)
 
+    async def get_revision(
+        self,
+        user_id: str,
+        payload: RevisionRequest,
+    ) -> RevisionResponse:
+        progress = await self.get_progress(user_id)
+        topic = (payload.topic or "").strip()
+        if not topic:
+            topic = progress.weak_topics[0] if progress.weak_topics else "Fractions"
+
+        return await self.ai_service.generate_revision(
+            topic=topic,
+            difficulty=self._normalize_difficulty(progress.current_difficulty),
+        )
+
+    async def get_quiz_history(self, user_id: str) -> QuizHistoryResponse:
+        results = await self.repository.list_results(user_id)
+        return QuizHistoryResponse(
+            results=[
+                self._history_item_from_result(row)
+                for row in [self._normalize_result(result) for result in results[::-1]]
+            ]
+        )
+
+    async def get_admin_dashboard(self) -> AdminDashboardResponse:
+        users = await self.repository.list_users()
+        all_results = await self.repository.list_all_results()
+        progress_rows = await self.repository.list_progress()
+
+        results_by_user: dict[str, list[dict]] = {}
+        for row in all_results:
+            normalized = self._normalize_result(row)
+            results_by_user.setdefault(str(row.get("user_id") or self.default_user_id), []).append(
+                normalized
+            )
+
+        user_ids = {
+            str(user.get("id")) for user in users if user.get("id")
+        } | set(results_by_user.keys())
+        progress_by_user = {
+            str(row.get("user_id")): row for row in progress_rows if row.get("user_id")
+        }
+
+        students: list[AdminStudentSummary] = []
+        weak_topic_counts: dict[str, int] = {}
+        total_score = 0.0
+
+        for user_id in sorted(user_ids):
+            user = next((item for item in users if str(item.get("id")) == user_id), {})
+            user_results = results_by_user.get(user_id, [])
+            progress = self._progress_from_row_or_results(
+                user_id=user_id,
+                row=progress_by_user.get(user_id),
+                results=user_results,
+            )
+            total_score += progress.accuracy
+            for topic in progress.weak_topics:
+                weak_topic_counts[topic] = weak_topic_counts.get(topic, 0) + 1
+
+            last_active = user_results[-1]["submitted_at"] if user_results else None
+            students.append(
+                AdminStudentSummary(
+                    id=user_id,
+                    email=user.get("email"),
+                    accuracy=progress.accuracy,
+                    completedQuizzes=progress.completed_quizzes,
+                    currentDifficulty=progress.current_difficulty,
+                    weakTopics=progress.weak_topics,
+                    lastActive=last_active,
+                )
+            )
+
+        recent_results = [
+            {
+                "id": row["id"],
+                "topic": row["topic"],
+                "score": row["score"],
+                "totalQuestions": row["total_questions"],
+                "correctAnswers": row["correct_answers"],
+                "difficulty": row["difficulty"],
+                "submittedAt": row["submitted_at"],
+            }
+            for row in sorted(
+                [self._normalize_result(row) for row in all_results],
+                key=lambda item: item["submitted_at"],
+            )[-8:][::-1]
+        ]
+
+        average_accuracy = round(total_score / len(students), 2) if students else 0
+        return AdminDashboardResponse(
+            totalStudents=len(students),
+            totalQuizzes=len(all_results),
+            averageAccuracy=average_accuracy,
+            weakTopicCounts=[
+                WeakTopicCount(topic=topic, count=count)
+                for topic, count in sorted(
+                    weak_topic_counts.items(),
+                    key=lambda item: item[1],
+                    reverse=True,
+                )[:8]
+            ],
+            students=students,
+            recentResults=recent_results,
+        )
+
     async def _refresh_progress(self, user_id: str) -> ProgressResponse:
         results = await self.repository.list_results(user_id)
         progress = self._build_progress(user_id, results)
@@ -269,13 +381,59 @@ class LearningService:
     def _normalize_result(self, row: dict) -> dict:
         return {
             "id": str(row["id"]),
+            "user_id": str(row.get("user_id") or self.default_user_id),
             "topic": str(row.get("topic") or "Untitled topic"),
             "score": float(row.get("score") or 0),
             "correct_answers": int(row.get("correct_answers") or 0),
             "total_questions": int(row.get("total_questions") or 0),
             "difficulty": self._normalize_difficulty(row.get("difficulty")).value,
+            "feedback": str(row.get("feedback") or ""),
+            "question_review": row.get("question_review") or [],
             "submitted_at": self._to_iso(row.get("submitted_at")),
         }
+
+    def _history_item_from_result(self, row: dict) -> QuizHistoryItem:
+        return QuizHistoryItem(
+            id=row["id"],
+            topic=row["topic"],
+            score=row["score"],
+            correctAnswers=row["correct_answers"],
+            totalQuestions=row["total_questions"],
+            difficulty=row["difficulty"],
+            feedback=row["feedback"],
+            questionReview=[
+                QuestionReview(
+                    question=str(item.get("question") or ""),
+                    selectedAnswer=item.get("selectedAnswer"),
+                    correctAnswer=str(item.get("correctAnswer") or ""),
+                    explanation=str(item.get("explanation") or ""),
+                    isCorrect=bool(item.get("isCorrect")),
+                )
+                for item in row["question_review"]
+                if item.get("question")
+            ],
+            submittedAt=row["submitted_at"],
+        )
+
+    def _progress_from_row_or_results(
+        self,
+        user_id: str,
+        row: dict | None,
+        results: list[dict],
+    ) -> ProgressResponse:
+        if not row:
+            return self._build_progress(user_id, results)
+
+        return ProgressResponse(
+            userId=user_id,
+            accuracy=float(row.get("accuracy") or 0),
+            completedQuizzes=int(row.get("completed_quizzes") or 0),
+            currentDifficulty=self._normalize_difficulty(row.get("current_difficulty")),
+            weakTopics=list(row.get("weak_topics") or []),
+            weeklyAccuracy=list(row.get("weekly_accuracy") or []),
+            topicBreakdown=list(row.get("topic_breakdown") or []),
+            recentResults=list(row.get("recent_results") or []),
+        )
 
     def _normalize_difficulty(self, value: DifficultyLevel | str | None) -> DifficultyLevel:
         if isinstance(value, DifficultyLevel):

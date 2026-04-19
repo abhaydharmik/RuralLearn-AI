@@ -13,6 +13,8 @@ class AuthenticatedUser:
     email: str | None = None
     full_name: str | None = None
     school: str | None = None
+    role: str = "student"
+    is_admin: bool = False
     is_demo: bool = False
 
 
@@ -44,11 +46,24 @@ async def get_current_user(
             raise AppError("Unable to resolve the authenticated user.", status_code=401)
 
         metadata = getattr(user, "user_metadata", None) or {}
+        app_metadata = getattr(user, "app_metadata", None) or {}
+        email = getattr(user, "email", None)
+        role = str(
+            app_metadata.get("role")
+            or metadata.get("role")
+            or metadata.get("user_role")
+            or "student"
+        ).lower()
+        is_admin = role in {"admin", "teacher"} or (
+            email is not None and email.lower() in settings.admin_email_list
+        )
         authenticated_user = AuthenticatedUser(
             id=str(user.id),
-            email=getattr(user, "email", None),
+            email=email,
             full_name=metadata.get("full_name") or metadata.get("name"),
             school=metadata.get("school"),
+            role="admin" if is_admin else role,
+            is_admin=is_admin,
             is_demo=False,
         )
 
@@ -62,3 +77,11 @@ async def get_current_user(
         return authenticated_user
 
     return AuthenticatedUser(id=settings.default_user_id, is_demo=True)
+
+
+async def require_admin(
+    current_user: AuthenticatedUser = Depends(get_current_user),
+) -> AuthenticatedUser:
+    if not current_user.is_admin:
+        raise AppError("Admin access is required for this dashboard.", status_code=403)
+    return current_user

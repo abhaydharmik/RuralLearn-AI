@@ -18,6 +18,17 @@ const DashboardPage = lazy(() =>
 const QuizPage = lazy(() =>
   import("@/pages/QuizPage").then((module) => ({ default: module.QuizPage })),
 );
+const QuizHistoryPage = lazy(() =>
+  import("@/pages/QuizHistoryPage").then((module) => ({ default: module.QuizHistoryPage })),
+);
+const RevisionPage = lazy(() =>
+  import("@/pages/RevisionPage").then((module) => ({ default: module.RevisionPage })),
+);
+const AdminDashboardPage = lazy(() =>
+  import("@/pages/AdminDashboardPage").then((module) => ({
+    default: module.AdminDashboardPage,
+  })),
+);
 
 function AppLoader() {
   return (
@@ -42,6 +53,16 @@ function ProtectedLayout() {
       <Outlet />
     </AppShell>
   );
+}
+
+function AdminRoute() {
+  const { user } = useAuth();
+
+  if (!user?.isAdmin) {
+    return <Navigate replace to="/dashboard" />;
+  }
+
+  return <AdminDashboardPage />;
 }
 
 function PublicRoute() {
@@ -69,7 +90,10 @@ export default function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/quiz" element={<QuizPage />} />
+          <Route path="/revision" element={<RevisionPage />} />
+          <Route path="/history" element={<QuizHistoryPage />} />
           <Route path="/analytics" element={<AnalyticsPage />} />
+          <Route path="/admin" element={<AdminRoute />} />
         </Route>
         <Route
           path="*"

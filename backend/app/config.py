@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     ]
 
     default_user_id: str = "demo-student"
+    admin_emails: str = ""
 
     # AI provider. Keep the key only in backend/.env, never in Vite/frontend env.
     use_mock_ai: bool = True
@@ -41,6 +42,14 @@ class Settings(BaseSettings):
         if not value:
             return []
         return [item.strip() for item in value.split(",") if item.strip()]
+
+    @property
+    def admin_email_list(self) -> list[str]:
+        return [
+            item.strip().lower()
+            for item in self.admin_emails.split(",")
+            if item.strip()
+        ]
 
 
 @lru_cache

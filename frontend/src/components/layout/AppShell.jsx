@@ -1,4 +1,15 @@
-import { BookOpen, BrainCircuit, ChartColumnBig, LayoutDashboard, LogOut, Menu, X } from "lucide-react";
+import {
+  BookOpen,
+  BrainCircuit,
+  ChartColumnBig,
+  History,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  NotebookPen,
+  ShieldCheck,
+  X,
+} from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useMemo, useState } from "react";
 
@@ -11,11 +22,15 @@ const navigation = [
   { label: "Dashboard", icon: LayoutDashboard, to: "/dashboard" },
   { label: "AI Tutor", icon: BrainCircuit, to: "/chat" },
   { label: "Quiz Lab", icon: BookOpen, to: "/quiz" },
+  { label: "Revision", icon: NotebookPen, to: "/revision" },
+  { label: "History", icon: History, to: "/history" },
   { label: "Analytics", icon: ChartColumnBig, to: "/analytics" },
+  { label: "Admin", icon: ShieldCheck, to: "/admin", adminOnly: true },
 ];
 
 function SidebarContent({ user, onClose, onLogout }) {
   const location = useLocation();
+  const visibleNavigation = navigation.filter((item) => !item.adminOnly || user?.isAdmin);
 
   const activeLabel = useMemo(() => {
     return navigation.find((item) => location.pathname.startsWith(item.to))?.label || "Workspace";
@@ -45,7 +60,7 @@ function SidebarContent({ user, onClose, onLogout }) {
         </div>
 
         <nav className="space-y-2 rounded-[28px] border border-white/10 bg-white/[0.03] p-3">
-          {navigation.map((item) => (
+          {visibleNavigation.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -86,17 +101,19 @@ function SidebarContent({ user, onClose, onLogout }) {
   );
 }
 
-function MobileBottomNav() {
+function MobileBottomNav({ user }) {
+  const visibleNavigation = navigation.filter((item) => !item.adminOnly || user?.isAdmin);
+
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-slate-950/90 px-3 pb-[calc(env(safe-area-inset-bottom)+0.6rem)] pt-3 backdrop-blur lg:hidden">
-      <nav className="mx-auto grid max-w-md grid-cols-4 gap-2 rounded-[24px] border border-white/10 bg-white/[0.03] p-2">
-        {navigation.map((item) => (
+      <nav className="mx-auto flex max-w-md gap-2 overflow-x-auto rounded-[24px] border border-white/10 bg-white/[0.03] p-2">
+        {visibleNavigation.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             className={({ isActive }) =>
               cn(
-                "flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[11px] font-medium transition",
+                "flex min-w-[72px] flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[11px] font-medium transition",
                 isActive ? "bg-white text-slate-950" : "text-slate-300 hover:bg-white/5 hover:text-white",
               )
             }
@@ -138,7 +155,7 @@ export function AppShell({ user, onLogout, children }) {
             <div className="mx-auto flex w-full max-w-[1120px] items-center justify-between px-4 py-4 sm:px-6 xl:max-w-[1180px]">
               <div className="min-w-0 pr-3">
                 <p className="text-[11px] uppercase tracking-[0.18em] text-primary/80 sm:text-xs sm:tracking-[0.3em]">
-                  Student Workspace
+                  {user?.isAdmin ? "Admin Workspace" : "Student Workspace"}
                 </p>
                 <h1 className="mt-1 text-base font-semibold text-white sm:text-lg">
                   Personalized Learning Suite
@@ -157,7 +174,7 @@ export function AppShell({ user, onLogout, children }) {
           </div>
         </main>
       </div>
-      <MobileBottomNav />
+      <MobileBottomNav user={user} />
     </div>
   );
 }

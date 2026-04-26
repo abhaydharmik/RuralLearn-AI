@@ -66,20 +66,20 @@ export function AuthPage() {
 
   return (
     <div className="relative min-h-screen overflow-hidden px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-7xl items-center gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(16,185,129,0.1),transparent_24%),radial-gradient(circle_at_80%_0%,rgba(34,211,238,0.12),transparent_30%)]" />
+      <div className="relative mx-auto grid min-h-[calc(100vh-4rem)] max-w-7xl items-center gap-8 lg:grid-cols-[1.08fr_0.92fr]">
         <section className="animated-enter space-y-8">
           <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-xs text-primary sm:text-sm">
-            <span className="h-2 w-2 rounded-full bg-primary" />
+            <span className="h-2 w-2 rounded-full bg-primary shadow-[0_0_18px_rgba(16,185,129,0.75)]" />
             SDG 4 Learning Platform
           </div>
 
           <div className="space-y-5">
             <h1 className="max-w-3xl text-4xl font-bold leading-tight text-white sm:text-5xl md:text-6xl">
-              Personalized AI learning built for students who deserve more support.
+              Personalized AI learning for students who need clarity, confidence, and momentum.
             </h1>
-            <p className="max-w-2xl text-base text-slate-300 sm:text-lg">
-              RuralLearn AI combines tutoring, quizzes, and analytics into a calm, modern learning
-              workspace that feels like a real education SaaS product.
+            <p className="max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">
+              RuralLearn AI blends tutoring, quizzes, revision support, and analytics into a polished learning workspace designed for real educational impact.
             </p>
           </div>
 
@@ -87,12 +87,12 @@ export function AuthPage() {
             {highlights.map((item) => (
               <Card key={item.title} className="border-white/10 bg-white/5">
                 <CardContent className="space-y-4 p-5">
-                  <div className="inline-flex rounded-2xl bg-primary/10 p-3 text-primary mt-4">
+                  <div className="mt-2 inline-flex rounded-2xl border border-primary/15 bg-primary/10 p-3 text-primary">
                     <item.icon className="h-5 w-5" />
                   </div>
                   <div>
                     <h2 className="text-lg font-semibold text-white">{item.title}</h2>
-                    <p className="mt-2 text-sm text-slate-400">{item.description}</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-400">{item.description}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -108,7 +108,7 @@ export function AuthPage() {
                   type="button"
                   onClick={() => setMode("login")}
                   className={`flex-1 rounded-2xl px-4 py-3 text-sm font-medium transition ${
-                    !isSignup ? "bg-white text-slate-950" : "text-slate-300"
+                    !isSignup ? "bg-white text-slate-950 shadow-lg shadow-black/10" : "text-slate-300"
                   }`}
                 >
                   Log in
@@ -117,7 +117,7 @@ export function AuthPage() {
                   type="button"
                   onClick={() => setMode("signup")}
                   className={`flex-1 rounded-2xl px-4 py-3 text-sm font-medium transition ${
-                    isSignup ? "bg-white text-slate-950" : "text-slate-300"
+                    isSignup ? "bg-white text-slate-950 shadow-lg shadow-black/10" : "text-slate-300"
                   }`}
                 >
                   Sign up
@@ -130,9 +130,14 @@ export function AuthPage() {
                 <p className="text-sm uppercase tracking-[0.25em] text-primary/70">
                   {isSignup ? "Create account" : "Welcome back"}
                 </p>
-                <h2 className="mt-2 text-xl font-semibold text-white sm:text-2xl">
+                <h2 className="mt-2 text-2xl font-semibold text-white">
                   {isSignup ? "Start the learning journey" : "Continue learning"}
                 </h2>
+                <p className="mt-2 text-sm leading-6 text-slate-400">
+                  {isSignup
+                    ? "Create a student account to save quizzes, revision plans, and learning analytics."
+                    : "Sign in to continue with your tutor, quiz history, revision mode, and dashboards."}
+                </p>
               </div>
 
               {isSignup ? (
@@ -195,10 +200,10 @@ export function AuthPage() {
                 <ArrowRight className="h-4 w-4" />
               </Button>
 
-              <p className="text-sm text-slate-400">
+              <p className="text-sm leading-6 text-slate-400">
                 {isSignup
-                  ? "Supabase auth is supported automatically when the environment variables are added."
-                  : "Use mock mode for local demos now, then switch to Supabase later with env config."}
+                  ? "Supabase authentication is active when environment variables are configured."
+                  : "Your session, JWT access, progress, and admin checks are handled automatically after sign in."}
               </p>
             </form>
           </CardContent>

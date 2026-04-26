@@ -114,7 +114,7 @@ export function AdminDashboardPage() {
                       </p>
                       <p className="mt-1 text-sm text-slate-400">
                         {student.completedQuizzes} quizzes completed
-                        {student.lastActive ? ` · Last active ${new Date(student.lastActive).toLocaleDateString()}` : ""}
+                        {student.lastActive ? ` | Last active ${new Date(student.lastActive).toLocaleDateString()}` : ""}
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -154,7 +154,10 @@ export function AdminDashboardPage() {
         <CardContent className="space-y-3">
           {dashboard.recentResults.length ? (
             dashboard.recentResults.map((entry) => (
-              <div key={entry.id} className="grid gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 md:grid-cols-[1fr_auto_auto] md:items-center">
+              <div
+                key={entry.id}
+                className="grid gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 md:grid-cols-[1fr_auto_auto] md:items-center"
+              >
                 <div className="min-w-0">
                   <p className="font-semibold text-white">{entry.topic}</p>
                   <p className="mt-1 text-sm text-slate-400">

@@ -44,7 +44,7 @@ function SidebarContent({ user, onClose, onLogout }) {
             <p className="text-[11px] uppercase tracking-[0.22em] text-primary/70 sm:text-xs sm:tracking-[0.3em]">
               RuralLearn AI
             </p>
-            <h2 className="mt-2 text-lg font-semibold text-white sm:text-xl">Learning OS</h2>
+            <h2 className="mt-2 text-lg font-semibold text-white sm:text-xl">Your Smart Learning Companion</h2>
           </div>
           <Button className="lg:hidden" size="icon" variant="ghost" onClick={onClose}>
             <X className="h-5 w-5" />

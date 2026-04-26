@@ -111,7 +111,7 @@ export function ChatPage() {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
         <Card className="min-h-[58vh] lg:min-h-[62vh] xl:min-h-[68vh]">
           <CardContent className="flex h-full flex-col p-4 sm:p-6">
-            <div className="flex-1 space-y-4 overflow-y-auto pr-1">
+            <div className="h-[400px] space-y-4 overflow-y-scroll p-2">
               {messages.map((message) => (
                 <ChatMessage key={message.id} message={message} />
               ))}

@@ -6,22 +6,27 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { DetailPageSkeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/context/ToastContext";
 import { fetchProgress, fetchRevision } from "@/services/learningService";
 
 export function RevisionPage() {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const [topic, setTopic] = useState("");
   const [weakTopics, setWeakTopics] = useState([]);
   const [revision, setRevision] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [bootstrapping, setBootstrapping] = useState(true);
 
   useEffect(() => {
     if (!user?.id) {
       return;
     }
 
+    setBootstrapping(true);
     fetchProgress()
       .then((progress) => {
         setWeakTopics(progress.weakTopics || []);
@@ -30,8 +35,16 @@ export function RevisionPage() {
         return fetchRevision(firstTopic);
       })
       .then(setRevision)
-      .catch((fetchError) => setError(fetchError.message));
-  }, [user?.id]);
+      .catch((fetchError) => {
+        setError(fetchError.message);
+        showToast({
+          title: "Revision unavailable",
+          description: fetchError.message,
+          variant: "error",
+        });
+      })
+      .finally(() => setBootstrapping(false));
+  }, [showToast, user?.id]);
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -41,10 +54,19 @@ export function RevisionPage() {
       setRevision(response);
     } catch (revisionError) {
       setError(revisionError.message);
+      showToast({
+        title: "Revision generation failed",
+        description: revisionError.message,
+        variant: "error",
+      });
     } finally {
       setLoading(false);
     }
   };
+
+  if (bootstrapping) {
+    return <DetailPageSkeleton />;
+  }
 
   return (
     <div className="space-y-8">

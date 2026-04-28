@@ -9,11 +9,14 @@ import {
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AnalyticsSkeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/context/ToastContext";
 import { fetchProgress } from "@/services/learningService";
 
 export function AnalyticsPage() {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const [progress, setProgress] = useState(null);
   const [error, setError] = useState("");
 
@@ -25,8 +28,15 @@ export function AnalyticsPage() {
     setError("");
     fetchProgress(user.id)
       .then(setProgress)
-      .catch((fetchError) => setError(fetchError.message));
-  }, [user?.id]);
+      .catch((fetchError) => {
+        setError(fetchError.message);
+        showToast({
+          title: "Analytics unavailable",
+          description: fetchError.message,
+          variant: "error",
+        });
+      });
+  }, [showToast, user?.id]);
 
   if (error) {
     return (
@@ -39,7 +49,7 @@ export function AnalyticsPage() {
   }
 
   if (!progress) {
-    return <div className="text-sm text-slate-400">Loading analytics...</div>;
+    return <AnalyticsSkeleton />;
   }
 
   const hasResults = progress.completedQuizzes > 0;

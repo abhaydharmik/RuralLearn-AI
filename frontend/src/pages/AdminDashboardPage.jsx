@@ -6,18 +6,28 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { DashboardSkeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/context/ToastContext";
 import { formatPercent } from "@/lib/utils";
 import { fetchAdminDashboard } from "@/services/learningService";
 
 export function AdminDashboardPage() {
+  const { showToast } = useToast();
   const [dashboard, setDashboard] = useState(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
     fetchAdminDashboard()
       .then(setDashboard)
-      .catch((fetchError) => setError(fetchError.message));
-  }, []);
+      .catch((fetchError) => {
+        setError(fetchError.message);
+        showToast({
+          title: "Admin dashboard unavailable",
+          description: fetchError.message,
+          variant: "error",
+        });
+      });
+  }, [showToast]);
 
   if (error) {
     return (
@@ -30,7 +40,7 @@ export function AdminDashboardPage() {
   }
 
   if (!dashboard) {
-    return <div className="text-sm text-slate-400">Loading admin dashboard...</div>;
+    return <DashboardSkeleton />;
   }
 
   return (

@@ -6,25 +6,42 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { DetailPageSkeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/context/ToastContext";
 import { formatPercent } from "@/lib/utils";
 import { fetchQuizHistory } from "@/services/learningService";
 
 export function QuizHistoryPage() {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const [history, setHistory] = useState([]);
   const [expandedId, setExpandedId] = useState(null);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user?.id) {
       return;
     }
 
+    setLoading(true);
     fetchQuizHistory()
       .then((data) => setHistory(data.results || []))
-      .catch((fetchError) => setError(fetchError.message));
-  }, [user?.id]);
+      .catch((fetchError) => {
+        setError(fetchError.message);
+        showToast({
+          title: "History unavailable",
+          description: fetchError.message,
+          variant: "error",
+        });
+      })
+      .finally(() => setLoading(false));
+  }, [showToast, user?.id]);
+
+  if (loading) {
+    return <DetailPageSkeleton />;
+  }
 
   return (
     <div className="space-y-8">

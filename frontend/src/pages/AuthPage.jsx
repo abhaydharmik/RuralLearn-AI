@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/context/ToastContext";
 
 const highlights = [
   {
@@ -28,6 +29,7 @@ const highlights = [
 export function AuthPage() {
   const navigate = useNavigate();
   const { login, signup } = useAuth();
+  const { showToast } = useToast();
   const [mode, setMode] = useState("login");
   const [formState, setFormState] = useState({
     fullName: "",
@@ -56,9 +58,21 @@ export function AuthPage() {
       } else {
         await login({ email: formState.email, password: formState.password });
       }
+      showToast({
+        title: isSignup ? "Account created" : "Welcome back",
+        description: isSignup
+          ? "Your learning account is ready to use."
+          : "You have signed in successfully.",
+        variant: "success",
+      });
       navigate("/dashboard");
     } catch (submitError) {
       setError(submitError.message);
+      showToast({
+        title: isSignup ? "Signup failed" : "Login failed",
+        description: submitError.message,
+        variant: "error",
+      });
     } finally {
       setSubmitting(false);
     }

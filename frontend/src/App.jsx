@@ -29,6 +29,9 @@ const AdminDashboardPage = lazy(() =>
     default: module.AdminDashboardPage,
   })),
 );
+const ProfilePage = lazy(() =>
+  import("@/pages/ProfilePage").then((module) => ({ default: module.ProfilePage })),
+);
 
 function AppLoader() {
   return (
@@ -93,6 +96,7 @@ export default function App() {
           <Route path="/revision" element={<RevisionPage />} />
           <Route path="/history" element={<QuizHistoryPage />} />
           <Route path="/analytics" element={<AnalyticsPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
           <Route path="/admin" element={<AdminRoute />} />
         </Route>
         <Route

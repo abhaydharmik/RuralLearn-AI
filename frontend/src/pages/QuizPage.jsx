@@ -5,11 +5,13 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { QuizPageSkeleton } from "@/components/ui/skeleton";
 import {
   QuizQuestionCard,
   QuizResultCard,
 } from "@/components/quiz/QuizQuestionCard";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/context/ToastContext";
 import {
   createQuiz,
   fetchProgress,
@@ -18,27 +20,46 @@ import {
 
 export function QuizPage() {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const [topic, setTopic] = useState("Fractions");
   const [difficulty, setDifficulty] = useState("Easy");
   const [quiz, setQuiz] = useState(null);
   const [answers, setAnswers] = useState({});
   const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loadingPage, setLoadingPage] = useState(true);
+  const [generatingQuiz, setGeneratingQuiz] = useState(false);
+  const [submittingQuiz, setSubmittingQuiz] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (!user?.id) {
+      setLoadingPage(false);
       return;
     }
 
     setError("");
+    setLoadingPage(true);
     fetchProgress(user.id)
-      .then((data) => setDifficulty(data.currentDifficulty))
-      .catch((fetchError) => setError(fetchError.message));
-  }, [user?.id]);
+      .then((data) =>
+        setDifficulty(user?.quizMode && user.quizMode !== "Auto" ? user.quizMode : data.currentDifficulty),
+      )
+      .catch((fetchError) => {
+        setError(fetchError.message);
+        showToast({
+          title: "Quiz settings unavailable",
+          description: fetchError.message,
+          variant: "error",
+        });
+      })
+      .finally(() => {
+        setLoadingPage(false);
+      });
+  }, [showToast, user?.id, user?.quizMode]);
 
   const handleGenerateQuiz = async () => {
-    setLoading(true);
+    setGeneratingQuiz(true);
+    setQuiz(null);
+    setAnswers({});
     setResult(null);
     setError("");
 
@@ -53,10 +74,20 @@ export function QuizPage() {
 
       setQuiz(generatedQuiz);
       setAnswers({});
+      showToast({
+        title: "Quiz ready",
+        description: `Generated 5 questions for ${generatedQuiz.topic}.`,
+        variant: "success",
+      });
     } catch (generateError) {
       setError(generateError.message);
+      showToast({
+        title: "Quiz generation failed",
+        description: generateError.message,
+        variant: "error",
+      });
     } finally {
-      setLoading(false);
+      setGeneratingQuiz(false);
     }
   };
 
@@ -69,7 +100,7 @@ export function QuizPage() {
       return;
     }
 
-    setLoading(true);
+    setSubmittingQuiz(true);
     setError("");
     try {
       const submission = await submitQuiz({
@@ -81,13 +112,29 @@ export function QuizPage() {
 
       setResult(submission);
       const updatedProgress = await fetchProgress(user?.id);
-      setDifficulty(updatedProgress.currentDifficulty);
+      setDifficulty(
+        user?.quizMode && user.quizMode !== "Auto" ? user.quizMode : updatedProgress.currentDifficulty,
+      );
+      showToast({
+        title: "Quiz submitted",
+        description: `Score saved successfully: ${Math.round(submission.score)}%.`,
+        variant: "success",
+      });
     } catch (submitError) {
       setError(submitError.message);
+      showToast({
+        title: "Quiz submission failed",
+        description: submitError.message,
+        variant: "error",
+      });
     } finally {
-      setLoading(false);
+      setSubmittingQuiz(false);
     }
   };
+
+  if (loadingPage || generatingQuiz) {
+    return <QuizPageSkeleton />;
+  }
 
   return (
     <div className="space-y-8">
@@ -111,9 +158,9 @@ export function QuizPage() {
           <Button
             className="w-full xl:w-auto"
             onClick={handleGenerateQuiz}
-            disabled={loading}
+            disabled={generatingQuiz || submittingQuiz}
           >
-            {loading ? (
+            {generatingQuiz ? (
               <LoaderCircle className="h-4 w-4 animate-spin" />
             ) : (
               <Sparkles className="h-4 w-4" />
@@ -180,9 +227,9 @@ export function QuizPage() {
             <Button
               className="w-full sm:w-auto"
               onClick={handleSubmit}
-              disabled={loading}
+              disabled={submittingQuiz || generatingQuiz}
             >
-              {loading ? "Submitting..." : "Submit quiz"}
+              {submittingQuiz ? "Submitting..." : "Submit quiz"}
             </Button>
           </div>
 

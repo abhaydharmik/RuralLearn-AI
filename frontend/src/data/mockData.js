@@ -1,4 +1,5 @@
 import { getDifficultyLabel } from "@/lib/utils";
+import { normalizeProfileFields } from "@/services/profileService";
 
 const CHAT_KEY = "rurallearn_chat_messages";
 const QUIZ_KEY = "rurallearn_quiz_results";
@@ -37,6 +38,37 @@ function getStorageItem(key, fallback) {
 
 function setStorageItem(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
+}
+
+function sanitizeLocalUser(user) {
+  if (!user) {
+    return null;
+  }
+
+  const profile = normalizeProfileFields(user);
+  return {
+    id: user.id,
+    email: user.email,
+    fullName: profile.fullName,
+    school: profile.school,
+    classGrade: profile.classGrade,
+    preferredSubject: profile.preferredSubject,
+    learningGoal: profile.learningGoal,
+    language: profile.language,
+    explanationStyle: profile.explanationStyle,
+    quizMode: profile.quizMode,
+    reminderTime: profile.reminderTime,
+    ageGroup: profile.ageGroup,
+    targetExam: profile.targetExam,
+    guardianName: profile.guardianName,
+    teacherName: profile.teacherName,
+    schoolContact: profile.schoolContact,
+    emergencyContact: profile.emergencyContact,
+    avatarTheme: profile.avatarTheme,
+    loginMethod: "Local demo account",
+    role: user.role || "student",
+    isAdmin: Boolean(user.isAdmin),
+  };
 }
 
 function buildQuestion(topic, difficulty, index) {
@@ -108,7 +140,7 @@ function buildQuestion(topic, difficulty, index) {
 }
 
 export function getCurrentMockUser() {
-  return getStorageItem(USER_KEY, null);
+  return sanitizeLocalUser(getStorageItem(USER_KEY, null));
 }
 
 export function createLocalUser({ fullName, email, password }) {
@@ -125,11 +157,27 @@ export function createLocalUser({ fullName, email, password }) {
     email,
     password,
     school: "Rural Community School",
+    classGrade: "",
+    preferredSubject: "",
+    learningGoal: "",
+    language: "English",
+    explanationStyle: "Very simple",
+    quizMode: "Auto",
+    reminderTime: "18:00",
+    ageGroup: "",
+    targetExam: "",
+    guardianName: "",
+    teacherName: "",
+    schoolContact: "",
+    emergencyContact: "",
+    avatarTheme: "emerald",
+    role: "student",
+    isAdmin: false,
   };
 
   users.push(user);
   setStorageItem(USERS_KEY, users);
-  const safeUser = { ...user, password: undefined };
+  const safeUser = sanitizeLocalUser(user);
   setStorageItem(USER_KEY, safeUser);
   return safeUser;
 }
@@ -144,13 +192,59 @@ export function loginLocalUser({ email, password }) {
     throw new Error("Invalid email or password.");
   }
 
-  const safeUser = { ...user, password: undefined };
+  const safeUser = sanitizeLocalUser(user);
   setStorageItem(USER_KEY, safeUser);
   return safeUser;
 }
 
 export function logoutLocalUser() {
   localStorage.removeItem(USER_KEY);
+}
+
+export function updateLocalUser(updates) {
+  const currentUser = getStorageItem(USER_KEY, null);
+  if (!currentUser) {
+    throw new Error("No active user session found.");
+  }
+
+  const users = getStorageItem(USERS_KEY, []);
+  const index = users.findIndex((entry) => entry.id === currentUser.id);
+  if (index < 0) {
+    throw new Error("User account could not be found.");
+  }
+
+  users[index] = {
+    ...users[index],
+    ...updates,
+  };
+
+  setStorageItem(USERS_KEY, users);
+  const safeUser = sanitizeLocalUser(users[index]);
+  setStorageItem(USER_KEY, safeUser);
+  return safeUser;
+}
+
+export function changeLocalPassword({ currentPassword, nextPassword }) {
+  const currentUser = getStorageItem(USER_KEY, null);
+  if (!currentUser) {
+    throw new Error("No active user session found.");
+  }
+
+  const users = getStorageItem(USERS_KEY, []);
+  const index = users.findIndex((entry) => entry.id === currentUser.id);
+  if (index < 0) {
+    throw new Error("User account could not be found.");
+  }
+
+  if (users[index].password !== currentPassword) {
+    throw new Error("Current password is incorrect.");
+  }
+
+  users[index] = {
+    ...users[index],
+    password: nextPassword,
+  };
+  setStorageItem(USERS_KEY, users);
 }
 
 export function saveChatMessage(message) {

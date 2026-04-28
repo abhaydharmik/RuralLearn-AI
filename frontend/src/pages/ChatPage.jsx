@@ -6,8 +6,10 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { ChatPageSkeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/context/ToastContext";
 import { fetchChatHistory, fetchProgress, sendChatMessage } from "@/services/learningService";
 
 const promptSuggestions = [
@@ -19,11 +21,13 @@ const promptSuggestions = [
 
 export function ChatPage() {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const [messages, setMessages] = useState([]);
   const [question, setQuestion] = useState("");
   const [difficulty, setDifficulty] = useState("Easy");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  const [loadingPage, setLoadingPage] = useState(true);
 
   useEffect(() => {
     if (!user?.id) {
@@ -31,32 +35,46 @@ export function ChatPage() {
     }
 
     setError("");
-    fetchChatHistory(user.id)
-      .then(setMessages)
-      .catch((fetchError) => setError(fetchError.message));
-  }, [user?.id]);
-
-  useEffect(() => {
-    if (!user?.id) {
-      return;
-    }
-
-    fetchProgress(user.id)
-      .then((data) => setDifficulty(data.currentDifficulty))
-      .catch((fetchError) => setError(fetchError.message));
-  }, [user?.id]);
+    setLoadingPage(true);
+    Promise.all([fetchChatHistory(user.id), fetchProgress(user.id)])
+      .then(([chatHistory, progress]) => {
+        setMessages(chatHistory);
+        setDifficulty(progress.currentDifficulty);
+      })
+      .catch((fetchError) => {
+        setError(fetchError.message);
+        showToast({
+          title: "Tutor unavailable",
+          description: fetchError.message,
+          variant: "error",
+        });
+      })
+      .finally(() => setLoadingPage(false));
+  }, [showToast, user?.id]);
 
   const helperText = useMemo(() => {
+    const styleLead =
+      user?.explanationStyle === "Detailed"
+        ? "The tutor will try to give fuller step-by-step guidance."
+        : user?.explanationStyle === "Normal"
+          ? "The tutor will balance clarity with a little more detail."
+          : "The tutor will keep explanations very short and simple.";
+
+    const languageLead =
+      user?.language && user.language !== "English"
+        ? ` Preferred language mode is ${user.language}.`
+        : "";
+
     if (difficulty === "Hard") {
-      return "The system is ready to challenge the student with deeper follow-up questions.";
+      return `${styleLead} The system is ready to challenge the student with deeper follow-up questions.${languageLead}`;
     }
 
     if (difficulty === "Medium") {
-      return "The system is balancing confidence-building with slightly tougher explanations.";
+      return `${styleLead} The system is balancing confidence-building with slightly tougher explanations.${languageLead}`;
     }
 
-    return "The system is keeping explanations short and beginner-friendly for confidence.";
-  }, [difficulty]);
+    return `${styleLead} The system is keeping explanations short and beginner-friendly for confidence.${languageLead}`;
+  }, [difficulty, user?.explanationStyle, user?.language]);
 
   const handleSend = async (event) => {
     event.preventDefault();
@@ -86,10 +104,19 @@ export function ChatPage() {
       setMessages((current) => [...current, response]);
     } catch (sendError) {
       setError(sendError.message);
+      showToast({
+        title: "Message failed",
+        description: sendError.message,
+        variant: "error",
+      });
     } finally {
       setSending(false);
     }
   };
+
+  if (loadingPage) {
+    return <ChatPageSkeleton />;
+  }
 
   return (
     <div className="space-y-8">
@@ -171,8 +198,8 @@ export function ChatPage() {
             <CardContent className="space-y-4 p-6">
               <h2 className="font-semibold text-white">Tutor behavior</h2>
               <div className="flex flex-wrap gap-2">
-                <Badge>Short answers</Badge>
-                <Badge variant="secondary">Beginner examples</Badge>
+                <Badge>{user?.explanationStyle || "Very simple"}</Badge>
+                <Badge variant="secondary">{user?.language || "English"}</Badge>
                 <Badge variant="secondary">Low-bandwidth friendly</Badge>
               </div>
               <p className="text-sm text-slate-400">

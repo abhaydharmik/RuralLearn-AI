@@ -7,10 +7,11 @@ import {
   LogOut,
   Menu,
   NotebookPen,
+  Settings2,
   ShieldCheck,
   X,
 } from "lucide-react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useMemo, useState } from "react";
 
 import { Avatar } from "@/components/ui/avatar";
@@ -30,11 +31,21 @@ const navigation = [
 
 function SidebarContent({ user, onClose, onLogout }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const visibleNavigation = navigation.filter((item) => !item.adminOnly || user?.isAdmin);
 
   const activeLabel = useMemo(() => {
+    if (location.pathname.startsWith("/profile")) {
+      return "Profile";
+    }
+
     return navigation.find((item) => location.pathname.startsWith(item.to))?.label || "Workspace";
   }, [location.pathname]);
+
+  const handleOpenProfile = () => {
+    navigate("/profile");
+    onClose?.();
+  };
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-y-auto p-4 sm:p-5">
@@ -81,18 +92,42 @@ function SidebarContent({ user, onClose, onLogout }) {
         </nav>
       </div>
 
-      <div className=" rounded-[28px] border border-white/10 bg-white/5 p-4 mt-4 lg:mt-4">
+      <div
+        className="mt-4 rounded-[28px] border border-white/10 bg-white/5 p-4 transition hover:border-primary/30 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-primary/25 lg:mt-4"
+        role="button"
+        tabIndex={0}
+        onClick={handleOpenProfile}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            handleOpenProfile();
+          }
+        }}
+      >
         <div className="flex items-center gap-3">
-          <Avatar name={user?.fullName} />
+          <Avatar imageSrc={user?.avatarImage} name={user?.fullName} theme={user?.avatarTheme} />
           <div className="min-w-0">
             <p className="truncate font-semibold text-white">{user?.fullName || "Student"}</p>
             <p className="truncate text-sm text-slate-400">{user?.email}</p>
           </div>
         </div>
-        <Badge className="mt-4" variant="secondary">
-          {user?.school || "Rural Community School"}
-        </Badge>
-        <Button className="mt-4 w-full" variant="secondary" onClick={onLogout}>
+        <div className="mt-4 flex items-center justify-between gap-3">
+          <Badge variant="secondary">
+            {user?.school || "Rural Community School"}
+          </Badge>
+          <span className="inline-flex items-center gap-2 text-xs text-slate-400">
+            <Settings2 className="h-3.5 w-3.5" />
+            Profile
+          </span>
+        </div>
+        <Button
+          className="mt-4 w-full"
+          variant="secondary"
+          onClick={(event) => {
+            event.stopPropagation();
+            onLogout();
+          }}
+        >
           <LogOut className="h-4 w-4" />
           Sign out
         </Button>

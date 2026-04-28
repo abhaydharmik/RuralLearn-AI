@@ -1,12 +1,15 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 import {
+  changePassword,
   getAccessToken,
   getSessionUser,
   login,
   logout,
+  logoutEverywhere,
   signup,
   subscribeToAuthChanges,
+  updateProfile,
 } from "@/services/authService";
 
 const AuthContext = createContext(null);
@@ -63,6 +66,16 @@ export function AuthProvider({ children }) {
       },
       logout: async () => {
         await logout();
+        setUser(null);
+      },
+      updateProfile: async (payload) => {
+        const sessionUser = await updateProfile(payload);
+        setUser(sessionUser);
+        return sessionUser;
+      },
+      changePassword,
+      logoutEverywhere: async () => {
+        await logoutEverywhere();
         setUser(null);
       },
     }),

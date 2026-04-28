@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
+import { avatarThemes } from "@/services/profileService";
 
-export function Avatar({ name, className }) {
+export function Avatar({ name, className, theme = "emerald", imageSrc }) {
   const initials = name
     ?.split(" ")
     .map((part) => part[0])
@@ -11,11 +12,20 @@ export function Avatar({ name, className }) {
   return (
     <div
       className={cn(
-        "flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/70 to-cyan-400/80 font-semibold text-slate-950",
+        "flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br font-semibold",
+        avatarThemes[theme] || avatarThemes.emerald,
         className,
       )}
     >
-      {initials || "ST"}
+      {imageSrc ? (
+        <img
+          alt={name || "Profile avatar"}
+          className="h-full w-full object-cover"
+          src={imageSrc}
+        />
+      ) : (
+        initials || "ST"
+      )}
     </div>
   );
 }

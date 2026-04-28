@@ -7,12 +7,15 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { DashboardSkeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/context/ToastContext";
 import { formatPercent } from "@/lib/utils";
 import { fetchProgress } from "@/services/learningService";
 
 export function DashboardPage() {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const [progress, setProgress] = useState(null);
   const [error, setError] = useState("");
 
@@ -24,8 +27,15 @@ export function DashboardPage() {
     setError("");
     fetchProgress(user.id)
       .then(setProgress)
-      .catch((fetchError) => setError(fetchError.message));
-  }, [user?.id]);
+      .catch((fetchError) => {
+        setError(fetchError.message);
+        showToast({
+          title: "Dashboard unavailable",
+          description: fetchError.message,
+          variant: "error",
+        });
+      });
+  }, [showToast, user?.id]);
 
   if (error) {
     return (
@@ -38,7 +48,7 @@ export function DashboardPage() {
   }
 
   if (!progress) {
-    return <div className="text-sm text-slate-400">Loading dashboard...</div>;
+    return <DashboardSkeleton />;
   }
 
   const hasResults = progress.completedQuizzes > 0;

@@ -1,4 +1,13 @@
-import { ArrowRight, BookOpenCheck, BrainCircuit, ChartNoAxesCombined } from "lucide-react";
+import {
+  ArrowRight,
+  BookOpenCheck,
+  BrainCircuit,
+  ChartNoAxesCombined,
+  Eye,
+  EyeOff,
+  ShieldCheck,
+  Wifi,
+} from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -28,7 +37,7 @@ const highlights = [
 
 export function AuthPage() {
   const navigate = useNavigate();
-  const { login, signup } = useAuth();
+  const { login, requestPasswordReset, signup } = useAuth();
   const { showToast } = useToast();
   const [mode, setMode] = useState("login");
   const [formState, setFormState] = useState({
@@ -38,9 +47,25 @@ export function AuthPage() {
     password: "",
   });
   const [submitting, setSubmitting] = useState(false);
+  const [sendingReset, setSendingReset] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
 
   const isSignup = mode === "signup";
+  const trustPoints = [
+    {
+      icon: ShieldCheck,
+      label: "Secure authentication",
+    },
+    {
+      icon: BookOpenCheck,
+      label: "Progress saved automatically",
+    },
+    {
+      icon: Wifi,
+      label: "Low-bandwidth friendly",
+    },
+  ];
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -78,26 +103,50 @@ export function AuthPage() {
     }
   };
 
+  const handleForgotPassword = async () => {
+    setSendingReset(true);
+    setError("");
+
+    try {
+      await requestPasswordReset(formState.email);
+      showToast({
+        title: "Reset link sent",
+        description: "Check your email for password reset instructions.",
+        variant: "success",
+      });
+    } catch (resetError) {
+      setError(resetError.message);
+      showToast({
+        title: "Reset failed",
+        description: resetError.message,
+        variant: "error",
+      });
+    } finally {
+      setSendingReset(false);
+    }
+  };
+
   return (
-    <div className="relative min-h-screen overflow-hidden px-4 py-8 sm:px-6 lg:px-8">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(16,185,129,0.1),transparent_24%),radial-gradient(circle_at_80%_0%,rgba(34,211,238,0.12),transparent_30%)]" />
-      <div className="relative mx-auto grid min-h-[calc(100vh-4rem)] max-w-7xl items-center gap-8 lg:grid-cols-[1.08fr_0.92fr]">
-        <section className="animated-enter space-y-8">
+    <div className="relative min-h-screen overflow-hidden px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(16,185,129,0.14),transparent_22%),radial-gradient(circle_at_82%_0%,rgba(34,211,238,0.12),transparent_28%),linear-gradient(rgba(148,163,184,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.04)_1px,transparent_1px)] bg-[length:auto,auto,34px_34px,34px_34px]" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[42%] bg-[radial-gradient(circle_at_center,rgba(15,23,42,0.1),rgba(2,6,23,0.6)_60%,transparent_72%)] lg:block" />
+      <div className="relative mx-auto grid min-h-[calc(100vh-3rem)] max-w-7xl items-center gap-6 lg:grid-cols-[1.02fr_0.98fr] lg:gap-10">
+        <section className="animated-enter space-y-6 sm:space-y-8">
           <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-xs text-primary sm:text-sm">
             <span className="h-2 w-2 rounded-full bg-primary shadow-[0_0_18px_rgba(16,185,129,0.75)]" />
             SDG 4 Learning Platform
           </div>
 
-          <div className="space-y-5">
+          <div className="space-y-4 sm:space-y-5">
             <h1 className="max-w-3xl text-4xl font-bold leading-tight text-white sm:text-5xl md:text-6xl">
-              Personalized AI learning for students who need clarity, confidence, and momentum.
+              Personalized AI learning that feels simple, supportive, and effective.
             </h1>
-            <p className="max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">
-              RuralLearn AI blends tutoring, quizzes, revision support, and analytics into a polished learning workspace designed for real educational impact.
+            <p className="max-w-2xl text-base leading-7 text-slate-300 sm:text-lg sm:leading-8">
+              RuralLearn AI combines tutoring, quizzes, revision support, and progress tracking in one focused learning workspace.
             </p>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {highlights.map((item) => (
               <Card key={item.title} className="border-white/10 bg-white/5">
                 <CardContent className="space-y-4 p-5">
@@ -114,15 +163,20 @@ export function AuthPage() {
           </div>
         </section>
 
-        <Card className="animated-enter overflow-hidden border-white/10">
+        <Card className="animated-enter overflow-hidden border-white/12 bg-[linear-gradient(180deg,rgba(15,23,42,0.96),rgba(15,23,42,0.9)),linear-gradient(135deg,rgba(255,255,255,0.05),transparent_36%)] shadow-[0_30px_80px_rgba(2,6,23,0.55)]">
           <CardContent className="p-0">
-            <div className="border-b border-white/10 bg-white/5 p-4 sm:p-6">
-              <div className="flex rounded-2xl bg-slate-950/60 p-1">
+            <div className="border-b border-white/10 bg-white/[0.045] p-4 sm:p-6">
+              <div className="relative grid grid-cols-2 rounded-[20px] border border-white/10 bg-slate-950/60 p-1">
+                <div
+                  className={`absolute inset-y-1 w-[calc(50%-4px)] rounded-2xl bg-white shadow-[0_14px_30px_rgba(255,255,255,0.08)] transition-transform duration-300 ${
+                    isSignup ? "translate-x-full" : "translate-x-0"
+                  }`}
+                />
                 <button
                   type="button"
                   onClick={() => setMode("login")}
-                  className={`flex-1 rounded-2xl px-4 py-3 text-sm font-medium transition ${
-                    !isSignup ? "bg-white text-slate-950 shadow-lg shadow-black/10" : "text-slate-300"
+                  className={`relative z-10 rounded-2xl px-4 py-3 text-sm font-medium transition ${
+                    !isSignup ? "text-slate-950" : "text-slate-300 hover:text-white"
                   }`}
                 >
                   Log in
@@ -130,8 +184,8 @@ export function AuthPage() {
                 <button
                   type="button"
                   onClick={() => setMode("signup")}
-                  className={`flex-1 rounded-2xl px-4 py-3 text-sm font-medium transition ${
-                    isSignup ? "bg-white text-slate-950 shadow-lg shadow-black/10" : "text-slate-300"
+                  className={`relative z-10 rounded-2xl px-4 py-3 text-sm font-medium transition ${
+                    isSignup ? "text-slate-950" : "text-slate-300 hover:text-white"
                   }`}
                 >
                   Sign up
@@ -150,7 +204,7 @@ export function AuthPage() {
                 <p className="mt-2 text-sm leading-6 text-slate-400">
                   {isSignup
                     ? "Create a student account to save quizzes, revision plans, and learning analytics."
-                    : "Sign in to continue with your tutor, quiz history, revision mode, and dashboards."}
+                    : "Sign in to continue with your tutor, quizzes, revision mode, and dashboards."}
                 </p>
               </div>
 
@@ -160,7 +214,7 @@ export function AuthPage() {
                     <label className="text-sm text-slate-300">Full name</label>
                     <Input
                       name="fullName"
-                      placeholder="Asha Kumari"
+                      placeholder="Angat Kumar"
                       value={formState.fullName}
                       onChange={handleChange}
                       required
@@ -193,14 +247,25 @@ export function AuthPage() {
 
               <div className="space-y-2">
                 <label className="text-sm text-slate-300">Password</label>
-                <Input
-                  name="password"
-                  type="password"
-                  placeholder="Enter password"
-                  value={formState.password}
-                  onChange={handleChange}
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter password"
+                    value={formState.password}
+                    onChange={handleChange}
+                    className="pr-14"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((current) => !current)}
+                    className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-slate-400 transition hover:text-white"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
 
               {error ? (
@@ -209,16 +274,34 @@ export function AuthPage() {
                 </div>
               ) : null}
 
+              {!isSignup ? (
+                <div className="flex items-center justify-end">
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    disabled={sendingReset}
+                    className="text-sm text-slate-400 transition hover:text-white disabled:opacity-50"
+                  >
+                    {sendingReset ? "Sending reset link..." : "Forgot password?"}
+                  </button>
+                </div>
+              ) : null}
+
               <Button className="w-full" size="lg" type="submit" disabled={submitting}>
                 {submitting ? "Please wait..." : isSignup ? "Create account" : "Log in"}
                 <ArrowRight className="h-4 w-4" />
               </Button>
 
-              <p className="text-sm leading-6 text-slate-400">
-                {isSignup
-                  ? "Supabase authentication is active when environment variables are configured."
-                  : "Your session, JWT access, progress, and admin checks are handled automatically after sign in."}
-              </p>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {trustPoints.map((item) => (
+                    <div key={item.label} className="flex items-center gap-2 text-sm text-slate-300">
+                      <item.icon className="h-4 w-4 text-primary" />
+                      <span>{item.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </form>
           </CardContent>
         </Card>

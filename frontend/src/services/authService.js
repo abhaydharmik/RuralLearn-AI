@@ -276,6 +276,26 @@ export async function changePassword({ currentPassword, nextPassword }) {
   changeLocalPassword({ currentPassword, nextPassword });
 }
 
+export async function requestPasswordReset(email) {
+  if (!email?.trim()) {
+    throw new Error("Enter your email address first.");
+  }
+
+  if (hasSupabaseConfig) {
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/auth`,
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return;
+  }
+
+  return;
+}
+
 export async function logoutEverywhere() {
   if (hasSupabaseConfig) {
     const { error } = await supabase.auth.signOut({ scope: "global" });

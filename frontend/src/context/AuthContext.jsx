@@ -7,6 +7,7 @@ import {
   login,
   logout,
   logoutEverywhere,
+  requestPasswordReset,
   signup,
   subscribeToAuthChanges,
   updateProfile,
@@ -74,6 +75,7 @@ export function AuthProvider({ children }) {
         return sessionUser;
       },
       changePassword,
+      requestPasswordReset,
       logoutEverywhere: async () => {
         await logoutEverywhere();
         setUser(null);

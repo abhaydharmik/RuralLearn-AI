@@ -22,10 +22,7 @@ export function RevisionPage() {
   const [bootstrapping, setBootstrapping] = useState(true);
 
   useEffect(() => {
-    if (!user?.id) {
-      return;
-    }
-
+    if (!user?.id) return;
     setBootstrapping(true);
     fetchProgress()
       .then((progress) => {
@@ -37,11 +34,7 @@ export function RevisionPage() {
       .then(setRevision)
       .catch((fetchError) => {
         setError(fetchError.message);
-        showToast({
-          title: "Revision unavailable",
-          description: fetchError.message,
-          variant: "error",
-        });
+        showToast({ title: "Revision unavailable", description: fetchError.message, variant: "error" });
       })
       .finally(() => setBootstrapping(false));
   }, [showToast, user?.id]);
@@ -54,22 +47,16 @@ export function RevisionPage() {
       setRevision(response);
     } catch (revisionError) {
       setError(revisionError.message);
-      showToast({
-        title: "Revision generation failed",
-        description: revisionError.message,
-        variant: "error",
-      });
+      showToast({ title: "Revision generation failed", description: revisionError.message, variant: "error" });
     } finally {
       setLoading(false);
     }
   };
 
-  if (bootstrapping) {
-    return <DetailPageSkeleton />;
-  }
+  if (bootstrapping) return <DetailPageSkeleton />;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <PageHeader
         eyebrow="Revision Mode"
         title="Repair weak topics with guided practice"
@@ -77,10 +64,11 @@ export function RevisionPage() {
         badge={revision ? `Source: ${revision.source}` : "Personalized"}
       />
 
+      {/* ── Topic input ── */}
       <Card>
-        <CardContent className="grid gap-4 p-5 sm:p-6 lg:grid-cols-[1fr_auto] lg:items-end">
+        <CardContent className="grid gap-4 p-4 sm:p-5 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="space-y-2">
-            <label className="text-sm text-slate-300">Topic to revise</label>
+            <label className="text-[13px] font-medium text-slate-400">Topic to revise</label>
             <Input
               value={topic}
               onChange={(event) => setTopic(event.target.value)}
@@ -88,7 +76,11 @@ export function RevisionPage() {
             />
           </div>
           <Button className="w-full lg:w-auto" onClick={handleGenerate} disabled={loading}>
-            {loading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            {loading ? (
+              <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <RefreshCw className="h-3.5 w-3.5" />
+            )}
             Generate revision
           </Button>
         </CardContent>
@@ -96,85 +88,98 @@ export function RevisionPage() {
 
       {error ? (
         <Card>
-          <CardContent className="p-5 text-sm text-rose-200">
+          <CardContent className="p-4 text-[13px] text-rose-300/90">
             Revision could not load: {error}
           </CardContent>
         </Card>
       ) : null}
 
-      <section className="grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
+      <section className="grid gap-5 xl:grid-cols-[0.8fr_1.2fr]">
+
+        {/* ── Weak topic queue ── */}
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-3">
             <CardTitle>Weak-topic queue</CardTitle>
-            <p className="text-sm text-slate-400">
+            <p className="text-[12px] text-slate-500">
               These topics come from quiz scores below 60%.
             </p>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-2">
             {weakTopics.length ? (
               weakTopics.map((item) => (
                 <button
                   key={item}
                   type="button"
                   onClick={() => setTopic(item)}
-                  className="flex w-full items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left transition hover:border-primary/40 hover:bg-primary/10"
+                  className="flex w-full items-center justify-between gap-3 rounded-xl border border-white/[0.07] bg-white/[0.04] px-3.5 py-3 text-left transition hover:border-primary/30 hover:bg-primary/[0.08]"
                 >
-                  <span className="font-medium text-white">{item}</span>
+                  <span className="text-[13px] font-medium text-white">{item}</span>
                   <Badge variant="warning">Revise</Badge>
                 </button>
               ))
             ) : (
-              <div className="rounded-2xl border border-dashed border-white/10 p-5 text-sm text-slate-400">
+              <div className="rounded-xl border border-dashed border-white/[0.08] p-5 text-[13px] leading-relaxed text-slate-500">
                 No weak topic yet. Submit a quiz and this queue will become personalized.
               </div>
             )}
           </CardContent>
         </Card>
 
+        {/* ── Revision plan ── */}
         <Card>
-          <CardHeader>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <CardHeader className="pb-3">
+            <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <CardTitle>{revision?.topic || "Revision plan"}</CardTitle>
-                <p className="mt-2 text-sm text-slate-400">
+                <p className="mt-1.5 text-[12px] text-slate-500">
                   Beginner-friendly notes, examples, and quick checks.
                 </p>
               </div>
               {revision ? <Badge>{revision.difficulty}</Badge> : null}
             </div>
           </CardHeader>
-          <CardContent className="space-y-5">
+          <CardContent className="space-y-4">
             {revision ? (
               <>
-                <div className="rounded-3xl border border-primary/20 bg-primary/10 p-5">
+                {/* Summary */}
+                <div className="relative overflow-hidden rounded-xl border border-primary/20 bg-primary/[0.08] p-4">
+                  <div className="pointer-events-none absolute -right-4 -top-4 h-16 w-16 rounded-full bg-primary/20 blur-2xl" />
                   <div className="flex items-start gap-3">
-                    <Sparkles className="mt-1 h-5 w-5 flex-shrink-0 text-primary" />
-                    <p className="text-sm leading-6 text-slate-100">{revision.summary}</p>
+                    <Sparkles className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
+                    <p className="text-[13px] leading-relaxed text-slate-200">{revision.summary}</p>
                   </div>
                 </div>
 
-                <div className="grid gap-3 md:grid-cols-2">
+                {/* Examples */}
+                <div className="grid gap-2.5 md:grid-cols-2">
                   {revision.examples.map((example) => (
-                    <div key={example} className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
+                    <div
+                      key={example}
+                      className="rounded-xl border border-white/[0.07] bg-white/[0.04] p-3.5 text-[13px] leading-relaxed text-slate-300"
+                    >
                       {example}
                     </div>
                   ))}
                 </div>
 
-                <div className="space-y-3">
+                {/* Practice questions */}
+                <div className="space-y-2.5">
                   {revision.practiceQuestions.map((item, index) => (
-                    <div key={item.question} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                      <p className="flex items-center gap-2 font-semibold text-white">
-                        <Target className="h-4 w-4 text-primary" />
+                    <div
+                      key={item.question}
+                      className="rounded-xl border border-white/[0.07] bg-white/[0.04] p-4"
+                    >
+                      <p className="flex items-center gap-2 text-[13px] font-semibold text-white">
+                        <Target className="h-3.5 w-3.5 flex-shrink-0 text-primary" />
                         {index + 1}. {item.question}
                       </p>
-                      <p className="mt-2 text-sm text-slate-400">{item.answer}</p>
+                      <p className="mt-2 text-[12px] leading-relaxed text-slate-500">{item.answer}</p>
                     </div>
                   ))}
                 </div>
               </>
             ) : (
-              <div className="rounded-2xl border border-dashed border-white/10 p-5 text-sm text-slate-400">
+              <div className="rounded-xl border border-dashed border-white/[0.08] p-5 text-[13px] leading-relaxed text-slate-500">
                 Loading revision plan...
               </div>
             )}

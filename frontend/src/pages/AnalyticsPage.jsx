@@ -21,41 +21,32 @@ export function AnalyticsPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!user?.id) {
-      return;
-    }
-
+    if (!user?.id) return;
     setError("");
     fetchProgress(user.id)
       .then(setProgress)
       .catch((fetchError) => {
         setError(fetchError.message);
-        showToast({
-          title: "Analytics unavailable",
-          description: fetchError.message,
-          variant: "error",
-        });
+        showToast({ title: "Analytics unavailable", description: fetchError.message, variant: "error" });
       });
   }, [showToast, user?.id]);
 
   if (error) {
     return (
       <Card>
-        <CardContent className="p-5 text-sm text-rose-200">
+        <CardContent className="p-4 text-[13px] text-rose-300/90">
           Analytics data could not load: {error}
         </CardContent>
       </Card>
     );
   }
 
-  if (!progress) {
-    return <AnalyticsSkeleton />;
-  }
+  if (!progress) return <AnalyticsSkeleton />;
 
   const hasResults = progress.completedQuizzes > 0;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <PageHeader
         eyebrow="Analytics"
         title="Learning performance insights"
@@ -63,72 +54,82 @@ export function AnalyticsPage() {
         badge={`${progress.completedQuizzes} quizzes analyzed`}
       />
 
-      <section className="grid gap-6 xl:grid-cols-2">
+      <section className="grid gap-5 xl:grid-cols-2">
         <AccuracyTrendChart weeklyAccuracy={progress.weeklyAccuracy} />
         <AccuracyGauge accuracy={progress.accuracy} />
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-2">
+      <section className="grid gap-5 xl:grid-cols-2">
         <TopicBarChart topicBreakdown={progress.topicBreakdown} />
         <SkillRadarChart topicBreakdown={progress.topicBreakdown} />
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[minmax(320px,0.92fr)_minmax(0,1.08fr)]">
+      <section className="grid gap-5 xl:grid-cols-[minmax(320px,0.92fr)_minmax(0,1.08fr)]">
+
+        {/* Weak topic watchlist */}
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-3">
             <CardTitle>Weak topic watchlist</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-2">
             {hasResults ? (
               progress.weakTopics.map((topic, index) => (
                 <div
                   key={topic}
-                  className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-4 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-2.5 rounded-xl border border-white/[0.07] bg-white/[0.04] px-3.5 py-3 transition hover:border-white/[0.11] sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="min-w-0">
-                    <p className="font-semibold text-white">{topic}</p>
-                    <p className="mt-1 text-sm text-slate-400">
+                    <p className="text-[13px] font-semibold text-white">{topic}</p>
+                    <p className="mt-0.5 text-[11px] text-slate-500">
                       Add guided tutoring prompts and one short revision quiz.
                     </p>
                   </div>
-                  <Badge variant={index === 0 ? "warning" : "secondary"}>
+                  <Badge className="flex-shrink-0 self-start sm:self-center" variant={index === 0 ? "warning" : "secondary"}>
                     {index === 0 ? "Priority" : "Review"}
                   </Badge>
                 </div>
               ))
             ) : (
-              <div className="rounded-2xl border border-dashed border-white/10 p-5 text-sm text-slate-400">
+              <div className="rounded-xl border border-dashed border-white/[0.08] p-5 text-[13px] leading-relaxed text-slate-500">
                 No weak-topic data yet. Analytics will become personalized after the first submission.
               </div>
             )}
           </CardContent>
         </Card>
 
+        {/* Recent submissions */}
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-3">
             <CardTitle>Recent submissions</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-2">
             {progress.recentResults.length ? (
               progress.recentResults.map((entry) => (
                 <div
                   key={entry.id}
-                  className="grid gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-4 md:grid-cols-[1fr_auto_auto]"
+                  className="grid gap-2.5 rounded-xl border border-white/[0.07] bg-white/[0.04] px-3.5 py-3 transition hover:border-white/[0.11] md:grid-cols-[1fr_auto_auto] md:items-center"
                 >
                   <div className="min-w-0">
-                    <p className="font-semibold text-white">{entry.topic}</p>
-                    <p className="mt-1 text-sm text-slate-400">
-                      Submitted on {new Date(entry.submittedAt).toLocaleString()}
+                    <p className="text-[13px] font-semibold text-white">{entry.topic}</p>
+                    <p className="mt-0.5 text-[11px] text-slate-500">
+                      {new Date(entry.submittedAt).toLocaleDateString(undefined, {
+                        day: "numeric", month: "short", year: "numeric",
+                      })}
                     </p>
                   </div>
-                  <Badge variant="secondary">{entry.correctAnswers} correct</Badge>
-                  <Badge variant={entry.score >= 75 ? "success" : "secondary"}>
+                  <Badge className="self-start md:self-center" variant="secondary">
+                    {entry.correctAnswers} correct
+                  </Badge>
+                  <Badge
+                    className="self-start md:self-center"
+                    variant={entry.score >= 75 ? "success" : "secondary"}
+                  >
                     {Math.round(entry.score)}%
                   </Badge>
                 </div>
               ))
             ) : (
-              <div className="rounded-2xl border border-dashed border-white/10 p-5 text-sm text-slate-400">
+              <div className="rounded-xl border border-dashed border-white/[0.08] p-5 text-[13px] leading-relaxed text-slate-500">
                 No submissions yet. Run a few quizzes to unlock full analytics.
               </div>
             )}

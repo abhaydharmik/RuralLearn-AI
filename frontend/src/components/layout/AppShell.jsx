@@ -35,10 +35,7 @@ function SidebarContent({ user, onClose, onLogout }) {
   const visibleNavigation = navigation.filter((item) => !item.adminOnly || user?.isAdmin);
 
   const activeLabel = useMemo(() => {
-    if (location.pathname.startsWith("/profile")) {
-      return "Profile";
-    }
-
+    if (location.pathname.startsWith("/profile")) return "Profile";
     return navigation.find((item) => location.pathname.startsWith(item.to))?.label || "Workspace";
   }, [location.pathname]);
 
@@ -48,29 +45,39 @@ function SidebarContent({ user, onClose, onLogout }) {
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-y-auto p-4 sm:p-5">
-      <div className="space-y-5">
-        <div className="flex items-center justify-between rounded-[28px] border border-white/10 bg-white/5 p-4">
+    <div className="flex h-full min-h-0 flex-col overflow-y-auto p-3 sm:p-4">
+      <div className="space-y-3">
+
+        {/* ── Brand header ── */}
+        <div className="flex items-center justify-between rounded-2xl border border-white/[0.07] bg-white/[0.04] px-4 py-3.5">
           <div className="min-w-0">
-            <p className="text-[11px] uppercase tracking-[0.22em] text-primary/70 sm:text-xs sm:tracking-[0.3em]">
+            <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-primary/60">
               RuralLearn AI
             </p>
-            <h2 className="mt-2 text-lg font-semibold text-white sm:text-xl">Your Smart Learning Companion</h2>
+            <h2 className="mt-1.5 text-base font-semibold leading-snug text-white sm:text-[17px]">
+              Your Smart Learning<br />Companion
+            </h2>
           </div>
           <Button className="lg:hidden" size="icon" variant="ghost" onClick={onClose}>
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
           </Button>
         </div>
 
-        <div className="rounded-[28px] border border-primary/20 bg-primary/10 p-4">
-          <p className="text-xs uppercase tracking-[0.25em] text-primary/70">Focus today</p>
-          <p className="mt-3 text-lg font-semibold text-white">{activeLabel}</p>
-          <p className="mt-2 text-xs text-slate-300">
+        {/* ── Focus today card ── */}
+        <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-primary/[0.08] px-4 py-3.5">
+          {/* subtle glow blob */}
+          <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-primary/20 blur-2xl" />
+          <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-primary/60">
+            Focus today
+          </p>
+          <p className="mt-2 text-base font-semibold text-white">{activeLabel}</p>
+          <p className="mt-1.5 text-[12px] leading-relaxed text-slate-400">
             Keep explanations simple, practice regularly, and grow with each quiz.
           </p>
         </div>
 
-        <nav className="space-y-2 rounded-[28px] border border-white/10 bg-white/[0.03] p-3">
+        {/* ── Navigation ── */}
+        <nav className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-2 space-y-0.5">
           {visibleNavigation.map((item) => (
             <NavLink
               key={item.to}
@@ -78,22 +85,23 @@ function SidebarContent({ user, onClose, onLogout }) {
               onClick={onClose}
               className={({ isActive }) =>
                 cn(
-                  "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition",
+                  "flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-[13px] font-medium transition-all duration-150",
                   isActive
-                    ? "bg-white text-slate-950 shadow-lg shadow-white/5"
-                    : "text-slate-300 hover:bg-white/5 hover:text-white",
+                    ? "bg-white text-slate-900 shadow-md shadow-black/20"
+                    : "text-slate-400 hover:bg-white/[0.06] hover:text-white",
                 )
               }
             >
-              <item.icon className="h-5 w-5" />
+              <item.icon className="h-4 w-4 flex-shrink-0" />
               <span>{item.label}</span>
             </NavLink>
           ))}
         </nav>
       </div>
 
+      {/* ── User profile card ── */}
       <div
-        className="mt-4 rounded-[28px] border border-white/10 bg-white/5 p-4 transition hover:border-primary/30 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-primary/25 lg:mt-4"
+        className="mt-3 rounded-2xl border border-white/[0.07] bg-white/[0.04] p-4 transition-all duration-150 hover:border-primary/25 hover:bg-white/[0.07] focus:outline-none focus:ring-2 focus:ring-primary/30 lg:mt-3"
         role="button"
         tabIndex={0}
         onClick={handleOpenProfile}
@@ -104,31 +112,44 @@ function SidebarContent({ user, onClose, onLogout }) {
           }
         }}
       >
+        {/* Avatar row */}
         <div className="flex items-center gap-3">
-          <Avatar imageSrc={user?.avatarImage} name={user?.fullName} theme={user?.avatarTheme} />
+          <div className="relative flex-shrink-0">
+            <Avatar imageSrc={user?.avatarImage} name={user?.fullName} theme={user?.avatarTheme} />
+            <span className="absolute bottom-0.5 right-0.5 h-2 w-2 rounded-full bg-emerald-500 ring-[1.5px] ring-slate-900" />
+          </div>
           <div className="min-w-0">
-            <p className="truncate font-semibold text-white">{user?.fullName || "Student"}</p>
-            <p className="truncate text-sm text-slate-400">{user?.email}</p>
+            <p className="truncate text-[13px] font-semibold tracking-tight text-slate-100">
+              {user?.fullName || "Student"}
+            </p>
+            <p className="truncate text-[11px] text-slate-500 mt-0.5">{user?.email}</p>
           </div>
         </div>
-        <div className="mt-4 flex items-center justify-between gap-3">
-          <Badge variant="secondary">
+
+        {/* Divider */}
+        <div className="my-3 border-t border-white/[0.06]" />
+
+        {/* School + profile link */}
+        <div className="flex items-center justify-between gap-2">
+          <span className="truncate max-w-[155px] rounded-lg border border-primary/20 bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary/80">
             {user?.school || "Rural Community School"}
-          </Badge>
-          <span className="inline-flex items-center gap-2 text-xs text-slate-400">
-            <Settings2 className="h-3.5 w-3.5" />
+          </span>
+          <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-500 transition-colors hover:text-slate-300">
+            <Settings2 className="h-3 w-3" />
             Profile
           </span>
         </div>
+
+        {/* Sign out */}
         <Button
-          className="mt-4 w-full"
+          className="mt-3 w-full border-white/[0.07] bg-white/[0.04] text-slate-400 text-[13px] transition-all hover:border-red-500/20 hover:bg-red-500/[0.08] hover:text-red-400"
           variant="secondary"
           onClick={(event) => {
             event.stopPropagation();
             onLogout();
           }}
         >
-          <LogOut className="h-4 w-4" />
+          <LogOut className="h-3.5 w-3.5" />
           Sign out
         </Button>
       </div>
@@ -140,16 +161,18 @@ function MobileBottomNav({ user }) {
   const visibleNavigation = navigation.filter((item) => !item.adminOnly || user?.isAdmin);
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-slate-950/90 px-3 pb-[calc(env(safe-area-inset-bottom)+0.6rem)] pt-3 backdrop-blur lg:hidden">
-      <nav className="mx-auto flex max-w-md gap-2 overflow-x-auto rounded-[24px] border border-white/10 bg-white/[0.03] p-2">
+    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.07] bg-slate-950/95 px-3 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2.5 backdrop-blur-md lg:hidden">
+      <nav className="mx-auto flex max-w-md gap-1.5 overflow-x-auto rounded-2xl border border-white/[0.07] bg-white/[0.03] p-1.5">
         {visibleNavigation.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             className={({ isActive }) =>
               cn(
-                "flex min-w-[72px] flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[11px] font-medium transition",
-                isActive ? "bg-white text-slate-950" : "text-slate-300 hover:bg-white/5 hover:text-white",
+                "flex min-w-[64px] flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-[10px] font-medium transition-all duration-150",
+                isActive
+                  ? "bg-white text-slate-900 shadow-md shadow-black/20"
+                  : "text-slate-500 hover:bg-white/[0.06] hover:text-white",
               )
             }
           >
@@ -168,14 +191,20 @@ export function AppShell({ user, onLogout, children }) {
   return (
     <div className="min-h-screen overflow-x-hidden bg-transparent lg:h-screen lg:overflow-hidden">
       <div className="mx-auto flex min-h-screen max-w-[1600px] lg:h-screen">
-        <aside className="hidden border-r border-white/10 bg-slate-950/70 lg:block lg:h-screen lg:w-[272px] lg:flex-shrink-0">
+
+        {/* ── Desktop sidebar ── */}
+        <aside className="hidden border-r border-white/[0.07] bg-slate-950/80 lg:block lg:h-screen lg:w-[264px] lg:flex-shrink-0">
           <SidebarContent user={user} onLogout={onLogout} />
         </aside>
 
+        {/* ── Mobile drawer ── */}
         {isOpen ? (
           <div className="fixed inset-0 z-50 lg:hidden">
-            <div className="absolute inset-0 bg-slate-950/80" onClick={() => setIsOpen(false)} />
-            <aside className="absolute left-0 top-0 h-full w-[min(85vw,300px)] border-r border-white/10 bg-slate-950">
+            <div
+              className="absolute inset-0 bg-slate-950/75 backdrop-blur-sm"
+              onClick={() => setIsOpen(false)}
+            />
+            <aside className="absolute left-0 top-0 h-full w-[min(82vw,288px)] border-r border-white/[0.07] bg-slate-950">
               <SidebarContent
                 user={user}
                 onLogout={onLogout}
@@ -185,23 +214,32 @@ export function AppShell({ user, onLogout, children }) {
           </div>
         ) : null}
 
+        {/* ── Main area ── */}
         <main className="min-w-0 flex-1 lg:flex lg:h-screen lg:flex-col">
-          <div className="sticky top-0 z-20 border-b border-white/10 bg-slate-950/40 backdrop-blur">
-            <div className="mx-auto flex w-full max-w-[1120px] items-center justify-between px-4 py-4 sm:px-6 xl:max-w-[1180px]">
+
+          {/* Top bar */}
+          <div className="sticky top-0 z-20 border-b border-white/[0.07] bg-slate-950/50 backdrop-blur-md">
+            <div className="mx-auto flex w-full max-w-[1120px] items-center justify-between px-4 py-3.5 sm:px-6 xl:max-w-[1180px]">
               <div className="min-w-0 pr-3">
-                <p className="text-[11px] uppercase tracking-[0.18em] text-primary/80 sm:text-xs sm:tracking-[0.3em]">
+                <p className="text-[10px] font-medium uppercase tracking-[0.24em] text-primary/70 sm:tracking-[0.3em]">
                   {user?.isAdmin ? "Admin Workspace" : "Student Workspace"}
                 </p>
-                <h1 className="mt-1 text-base font-semibold text-white sm:text-lg">
+                <h1 className="mt-1 text-[15px] font-semibold text-white sm:text-base">
                   Personalized Learning Suite
                 </h1>
               </div>
-              <Button className="lg:hidden" size="icon" variant="secondary" onClick={() => setIsOpen(true)}>
-                <Menu className="h-5 w-5" />
+              <Button
+                className="lg:hidden border-white/[0.08] bg-white/[0.05]"
+                size="icon"
+                variant="secondary"
+                onClick={() => setIsOpen(true)}
+              >
+                <Menu className="h-4.5 w-4.5" />
               </Button>
             </div>
           </div>
 
+          {/* Page content */}
           <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
             <div className="mx-auto w-full max-w-[1120px] px-4 py-6 pb-28 sm:px-6 sm:pb-8 lg:py-8 xl:max-w-[1180px]">
               {children}
@@ -209,6 +247,7 @@ export function AppShell({ user, onLogout, children }) {
           </div>
         </main>
       </div>
+
       <MobileBottomNav user={user} />
     </div>
   );

@@ -6,17 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { QuizPageSkeleton } from "@/components/ui/skeleton";
-import {
-  QuizQuestionCard,
-  QuizResultCard,
-} from "@/components/quiz/QuizQuestionCard";
+import { QuizQuestionCard, QuizResultCard } from "@/components/quiz/QuizQuestionCard";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
-import {
-  createQuiz,
-  fetchProgress,
-  submitQuiz,
-} from "@/services/learningService";
+import { createQuiz, fetchProgress, submitQuiz } from "@/services/learningService";
 
 export function QuizPage() {
   const { user } = useAuth();
@@ -32,11 +25,7 @@ export function QuizPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!user?.id) {
-      setLoadingPage(false);
-      return;
-    }
-
+    if (!user?.id) { setLoadingPage(false); return; }
     setError("");
     setLoadingPage(true);
     fetchProgress(user.id)
@@ -45,15 +34,9 @@ export function QuizPage() {
       )
       .catch((fetchError) => {
         setError(fetchError.message);
-        showToast({
-          title: "Quiz settings unavailable",
-          description: fetchError.message,
-          variant: "error",
-        });
+        showToast({ title: "Quiz settings unavailable", description: fetchError.message, variant: "error" });
       })
-      .finally(() => {
-        setLoadingPage(false);
-      });
+      .finally(() => setLoadingPage(false));
   }, [showToast, user?.id, user?.quizMode]);
 
   const handleGenerateQuiz = async () => {
@@ -62,30 +45,19 @@ export function QuizPage() {
     setAnswers({});
     setResult(null);
     setError("");
-
     try {
       const generatedQuiz = await createQuiz({ topic, difficulty, userId: user?.id });
-
       if (!generatedQuiz?.questions || generatedQuiz.questions.length !== 5) {
         console.warn("Invalid quiz received");
         setQuiz(null);
         return;
       }
-
       setQuiz(generatedQuiz);
       setAnswers({});
-      showToast({
-        title: "Quiz ready",
-        description: `Generated 5 questions for ${generatedQuiz.topic}.`,
-        variant: "success",
-      });
+      showToast({ title: "Quiz ready", description: `Generated 5 questions for ${generatedQuiz.topic}.`, variant: "success" });
     } catch (generateError) {
       setError(generateError.message);
-      showToast({
-        title: "Quiz generation failed",
-        description: generateError.message,
-        variant: "error",
-      });
+      showToast({ title: "Quiz generation failed", description: generateError.message, variant: "error" });
     } finally {
       setGeneratingQuiz(false);
     }
@@ -96,48 +68,27 @@ export function QuizPage() {
   };
 
   const handleSubmit = async () => {
-    if (!quiz) {
-      return;
-    }
-
+    if (!quiz) return;
     setSubmittingQuiz(true);
     setError("");
     try {
-      const submission = await submitQuiz({
-        topic: quiz.topic,
-        questions: quiz.questions,
-        answers,
-        userId: user?.id,
-      });
-
+      const submission = await submitQuiz({ topic: quiz.topic, questions: quiz.questions, answers, userId: user?.id });
       setResult(submission);
       const updatedProgress = await fetchProgress(user?.id);
-      setDifficulty(
-        user?.quizMode && user.quizMode !== "Auto" ? user.quizMode : updatedProgress.currentDifficulty,
-      );
-      showToast({
-        title: "Quiz submitted",
-        description: `Score saved successfully: ${Math.round(submission.score)}%.`,
-        variant: "success",
-      });
+      setDifficulty(user?.quizMode && user.quizMode !== "Auto" ? user.quizMode : updatedProgress.currentDifficulty);
+      showToast({ title: "Quiz submitted", description: `Score saved successfully: ${Math.round(submission.score)}%.`, variant: "success" });
     } catch (submitError) {
       setError(submitError.message);
-      showToast({
-        title: "Quiz submission failed",
-        description: submitError.message,
-        variant: "error",
-      });
+      showToast({ title: "Quiz submission failed", description: submitError.message, variant: "error" });
     } finally {
       setSubmittingQuiz(false);
     }
   };
 
-  if (loadingPage || generatingQuiz) {
-    return <QuizPageSkeleton />;
-  }
+  if (loadingPage || generatingQuiz) return <QuizPageSkeleton />;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <PageHeader
         eyebrow="Quiz Lab"
         title="Generate adaptive practice sets"
@@ -145,10 +96,11 @@ export function QuizPage() {
         badge={`Suggested level: ${difficulty}`}
       />
 
+      {/* ── Topic input ── */}
       <Card>
-        <CardContent className="grid gap-4 p-5 sm:p-6 xl:grid-cols-[1fr_auto] xl:items-end">
+        <CardContent className="grid gap-4 p-4 sm:p-5 xl:grid-cols-[1fr_auto] xl:items-end">
           <div className="space-y-2">
-            <label className="text-sm text-slate-300">Topic</label>
+            <label className="text-[13px] font-medium text-slate-400">Topic</label>
             <Input
               value={topic}
               onChange={(event) => setTopic(event.target.value)}
@@ -161,9 +113,9 @@ export function QuizPage() {
             disabled={generatingQuiz || submittingQuiz}
           >
             {generatingQuiz ? (
-              <LoaderCircle className="h-4 w-4 animate-spin" />
+              <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
             ) : (
-              <Sparkles className="h-4 w-4" />
+              <Sparkles className="h-3.5 w-3.5" />
             )}
             Generate 5 MCQs
           </Button>
@@ -172,23 +124,24 @@ export function QuizPage() {
 
       {error ? (
         <Card>
-          <CardContent className="p-5 text-sm text-rose-200">
+          <CardContent className="p-4 text-[13px] text-rose-300/90">
             Quiz action failed: {error}
           </CardContent>
         </Card>
       ) : null}
 
+      {/* ── Empty state ── */}
       {!quiz ? (
         <Card className="border-dashed">
-          <CardContent className="flex min-h-[280px] flex-col items-center justify-center gap-4 p-6 text-center sm:min-h-[320px] sm:p-8">
-            <div className="rounded-full bg-primary/10 p-4 text-primary">
-              <BrainCircuit className="h-8 w-8" />
+          <CardContent className="flex min-h-[280px] flex-col items-center justify-center gap-5 p-6 text-center sm:min-h-[320px] sm:p-8">
+            <div className="rounded-xl border border-primary/20 bg-primary/10 p-4 text-primary">
+              <BrainCircuit className="h-7 w-7" />
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-white sm:text-2xl">
+              <h2 className="text-lg font-semibold tracking-tight text-white sm:text-xl">
                 Start a personalized quiz
               </h2>
-              <p className="mt-2 max-w-xl text-sm text-slate-400">
+              <p className="mt-2 max-w-md text-[13px] leading-relaxed text-slate-500">
                 The generator creates five MCQs with answers and explanations,
                 tuned to the student&apos;s current performance level.
               </p>
@@ -196,13 +149,13 @@ export function QuizPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-4">
+          {/* Quiz header */}
           <Card>
-            <CardHeader>
+            <CardHeader className="pb-3">
               <CardTitle className="break-words">{`${quiz.topic} quiz`}</CardTitle>
-              <p className="text-sm text-slate-400">
-                Difficulty: {quiz.difficulty}. Answer all questions, then submit
-                for feedback.
+              <p className="text-[13px] text-slate-500">
+                Difficulty: {quiz.difficulty}. Answer all questions, then submit for feedback.
               </p>
             </CardHeader>
           </Card>
@@ -218,7 +171,7 @@ export function QuizPage() {
               />
             ))
           ) : (
-            <p className="text-center text-slate-400">
+            <p className="text-center text-[13px] text-slate-500">
               No questions generated. Try again.
             </p>
           )}

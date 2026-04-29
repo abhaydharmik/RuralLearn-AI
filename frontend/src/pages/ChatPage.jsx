@@ -30,10 +30,7 @@ export function ChatPage() {
   const [loadingPage, setLoadingPage] = useState(true);
 
   useEffect(() => {
-    if (!user?.id) {
-      return;
-    }
-
+    if (!user?.id) return;
     setError("");
     setLoadingPage(true);
     Promise.all([fetchChatHistory(user.id), fetchProgress(user.id)])
@@ -43,11 +40,7 @@ export function ChatPage() {
       })
       .catch((fetchError) => {
         setError(fetchError.message);
-        showToast({
-          title: "Tutor unavailable",
-          description: fetchError.message,
-          variant: "error",
-        });
+        showToast({ title: "Tutor unavailable", description: fetchError.message, variant: "error" });
       })
       .finally(() => setLoadingPage(false));
   }, [showToast, user?.id]);
@@ -59,67 +52,45 @@ export function ChatPage() {
         : user?.explanationStyle === "Normal"
           ? "The tutor will balance clarity with a little more detail."
           : "The tutor will keep explanations very short and simple.";
-
     const languageLead =
       user?.language && user.language !== "English"
         ? ` Preferred language mode is ${user.language}.`
         : "";
-
-    if (difficulty === "Hard") {
+    if (difficulty === "Hard")
       return `${styleLead} The system is ready to challenge the student with deeper follow-up questions.${languageLead}`;
-    }
-
-    if (difficulty === "Medium") {
+    if (difficulty === "Medium")
       return `${styleLead} The system is balancing confidence-building with slightly tougher explanations.${languageLead}`;
-    }
-
     return `${styleLead} The system is keeping explanations short and beginner-friendly for confidence.${languageLead}`;
   }, [difficulty, user?.explanationStyle, user?.language]);
 
   const handleSend = async (event) => {
     event.preventDefault();
-    if (!question.trim()) {
-      return;
-    }
-
+    if (!question.trim()) return;
     const userMessage = {
       id: crypto.randomUUID(),
       role: "user",
       content: question.trim(),
       createdAt: new Date().toISOString(),
     };
-
     setMessages((current) => [...current, userMessage]);
     setQuestion("");
     setSending(true);
     setError("");
-
     try {
-      const response = await sendChatMessage({
-        question: userMessage.content,
-        difficulty,
-        userId: user?.id,
-      });
-
+      const response = await sendChatMessage({ question: userMessage.content, difficulty, userId: user?.id });
       setMessages((current) => [...current, response]);
     } catch (sendError) {
       setError(sendError.message);
-      showToast({
-        title: "Message failed",
-        description: sendError.message,
-        variant: "error",
-      });
+      showToast({ title: "Message failed", description: sendError.message, variant: "error" });
     } finally {
       setSending(false);
     }
   };
 
-  if (loadingPage) {
-    return <ChatPageSkeleton />;
-  }
+  if (loadingPage) return <ChatPageSkeleton />;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <PageHeader
         eyebrow="AI Tutor"
         title="Conversational learning support"
@@ -129,37 +100,42 @@ export function ChatPage() {
 
       {error ? (
         <Card>
-          <CardContent className="p-5 text-sm text-rose-200">
+          <CardContent className="p-4 text-[13px] text-rose-300/90">
             AI Tutor could not connect: {error}
           </CardContent>
         </Card>
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_300px] xl:items-start">
+
+        {/* ── Chat window ── */}
         <Card className="min-h-[58vh] lg:min-h-[62vh] xl:min-h-[68vh]">
-          <CardContent className="flex h-full flex-col p-4 sm:p-6">
-            <div className="h-[400px] space-y-4 overflow-y-scroll p-2">
+          <CardContent className="flex h-full flex-col p-4 sm:p-5">
+            <div className="h-[400px] space-y-3 overflow-y-scroll p-1">
               {messages.map((message) => (
                 <ChatMessage key={message.id} message={message} />
               ))}
               {sending ? (
-                <div className="flex items-center gap-3 rounded-3xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
-                  <LoaderCircle className="h-4 w-4 animate-spin text-primary" />
+                <div className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.04] px-4 py-3 text-[13px] text-slate-400">
+                  <LoaderCircle className="h-3.5 w-3.5 animate-spin text-primary" />
                   Thinking of a simple explanation...
                 </div>
               ) : null}
             </div>
 
-            <form className="mt-6 space-y-4 border-t border-white/10 pt-5" onSubmit={handleSend}>
+            <form
+              className="mt-5 space-y-3.5 border-t border-white/[0.07] pt-4"
+              onSubmit={handleSend}
+            >
               <Textarea
                 placeholder="Ask any question. Example: Explain gravity in simple words."
                 value={question}
                 onChange={(event) => setQuestion(event.target.value)}
               />
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="max-w-xl text-sm leading-6 text-slate-400">{helperText}</p>
+                <p className="max-w-xl text-[12px] leading-relaxed text-slate-500">{helperText}</p>
                 <Button className="w-full sm:w-auto" type="submit" disabled={sending}>
-                  <SendHorizonal className="h-4 w-4" />
+                  <SendHorizonal className="h-3.5 w-3.5" />
                   Send question
                 </Button>
               </div>
@@ -167,25 +143,28 @@ export function ChatPage() {
           </CardContent>
         </Card>
 
-        <div className="space-y-6 xl:sticky xl:top-24 xl:self-start">
+        {/* ── Sidebar ── */}
+        <div className="space-y-4 xl:sticky xl:top-24 xl:self-start">
+
+          {/* Prompt ideas */}
           <Card>
-            <CardContent className="space-y-4 p-6">
+            <CardContent className="space-y-4 p-4">
               <div className="flex items-center gap-3">
-                <div className="rounded-2xl bg-primary/10 p-3 text-primary">
-                  <Sparkles className="h-5 w-5" />
+                <div className="rounded-lg border border-primary/20 bg-primary/10 p-2 text-primary">
+                  <Sparkles className="h-4 w-4" />
                 </div>
                 <div>
-                  <h2 className="font-semibold text-white">Prompt ideas</h2>
-                  <p className="text-sm text-slate-400">Helpful starters for rural learners</p>
+                  <h2 className="text-[13px] font-semibold text-white">Prompt ideas</h2>
+                  <p className="text-[11px] text-slate-500">Helpful starters for rural learners</p>
                 </div>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {promptSuggestions.map((item) => (
                   <button
                     key={item}
                     type="button"
                     onClick={() => setQuestion(item)}
-                    className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left text-sm text-slate-300 transition hover:border-primary/35 hover:bg-primary/10 hover:text-white"
+                    className="w-full rounded-xl border border-white/[0.07] bg-white/[0.04] px-3.5 py-2.5 text-left text-[12px] leading-relaxed text-slate-400 transition hover:border-primary/30 hover:bg-primary/[0.08] hover:text-white"
                   >
                     {item}
                   </button>
@@ -194,15 +173,16 @@ export function ChatPage() {
             </CardContent>
           </Card>
 
+          {/* Tutor behavior */}
           <Card>
-            <CardContent className="space-y-4 p-6">
-              <h2 className="font-semibold text-white">Tutor behavior</h2>
-              <div className="flex flex-wrap gap-2">
+            <CardContent className="space-y-3.5 p-4">
+              <h2 className="text-[13px] font-semibold text-white">Tutor behavior</h2>
+              <div className="flex flex-wrap gap-1.5">
                 <Badge>{user?.explanationStyle || "Very simple"}</Badge>
                 <Badge variant="secondary">{user?.language || "English"}</Badge>
                 <Badge variant="secondary">Low-bandwidth friendly</Badge>
               </div>
-              <p className="text-sm text-slate-400">
+              <p className="text-[12px] leading-relaxed text-slate-500">
                 The tutor is designed to keep responses clear, supportive, and easy to read on small devices.
               </p>
             </CardContent>

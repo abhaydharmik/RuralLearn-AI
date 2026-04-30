@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -8,6 +10,7 @@ from app.exceptions import AppError
 from app.routes.learning import router as learning_router
 
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title=settings.app_name,
@@ -43,9 +46,10 @@ async def request_validation_handler(_request: Request, exc: RequestValidationEr
 
 @app.exception_handler(Exception)
 async def unexpected_error_handler(_request: Request, exc: Exception) -> JSONResponse:
+    logger.exception("Unhandled application error", exc_info=exc)
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={"detail": f"Internal server error: {exc}"},
+        content={"detail": "Internal server error."},
     )
 
 

@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 import {
   changePassword,
+  completePasswordRecovery,
   getAccessToken,
   getSessionUser,
   login,
@@ -75,6 +76,7 @@ export function AuthProvider({ children }) {
         return sessionUser;
       },
       changePassword,
+      completePasswordRecovery,
       requestPasswordReset,
       logoutEverywhere: async () => {
         await logoutEverywhere();

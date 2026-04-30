@@ -1,10 +1,11 @@
 import { LoaderCircle } from "lucide-react";
 import { lazy, Suspense } from "react";
-import { Navigate, Outlet, Route, Routes } from "react-router-dom";
+import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
 
 import { AppShell } from "@/components/layout/AppShell";
 import { useAuth } from "@/context/AuthContext";
 import { AuthPage } from "@/pages/AuthPage";
+import { isPasswordRecoveryRoute } from "@/services/authService";
 
 const AnalyticsPage = lazy(() =>
   import("@/pages/AnalyticsPage").then((module) => ({ default: module.AnalyticsPage })),
@@ -70,8 +71,10 @@ function AdminRoute() {
 
 function PublicRoute() {
   const { isAuthenticated } = useAuth();
+  const location = useLocation();
+  const recoveryMode = isPasswordRecoveryRoute(location);
 
-  if (isAuthenticated) {
+  if (isAuthenticated && !recoveryMode) {
     return <Navigate replace to="/dashboard" />;
   }
 

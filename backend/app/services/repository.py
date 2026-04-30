@@ -38,6 +38,51 @@ class Repository(Protocol):
     async def list_progress(self) -> list[dict]: ...
 
 
+class ResilientRepository:
+    def __init__(self, primary: Repository, fallback: Repository) -> None:
+        self.primary = primary
+        self.fallback = fallback
+
+    async def _run(self, primary_method, fallback_method, *args, **kwargs):
+        try:
+            return await primary_method(*args, **kwargs)
+        except Exception:
+            return await fallback_method(*args, **kwargs)
+
+    async def upsert_user(self, payload: dict) -> None:
+        await self._run(self.primary.upsert_user, self.fallback.upsert_user, payload)
+
+    async def list_users(self) -> list[dict]:
+        return await self._run(self.primary.list_users, self.fallback.list_users)
+
+    async def store_chat_message(self, payload: dict) -> None:
+        await self._run(self.primary.store_chat_message, self.fallback.store_chat_message, payload)
+
+    async def list_chat_messages(self, user_id: str) -> list[dict]:
+        return await self._run(self.primary.list_chat_messages, self.fallback.list_chat_messages, user_id)
+
+    async def store_quiz(self, payload: dict) -> None:
+        await self._run(self.primary.store_quiz, self.fallback.store_quiz, payload)
+
+    async def store_result(self, payload: dict) -> None:
+        await self._run(self.primary.store_result, self.fallback.store_result, payload)
+
+    async def list_results(self, user_id: str) -> list[dict]:
+        return await self._run(self.primary.list_results, self.fallback.list_results, user_id)
+
+    async def list_all_results(self) -> list[dict]:
+        return await self._run(self.primary.list_all_results, self.fallback.list_all_results)
+
+    async def upsert_progress(self, payload: dict) -> None:
+        await self._run(self.primary.upsert_progress, self.fallback.upsert_progress, payload)
+
+    async def get_progress(self, user_id: str) -> dict | None:
+        return await self._run(self.primary.get_progress, self.fallback.get_progress, user_id)
+
+    async def list_progress(self) -> list[dict]:
+        return await self._run(self.primary.list_progress, self.fallback.list_progress)
+
+
 class InMemoryRepository:
     def __init__(self) -> None:
         self.users: dict[str, dict] = {}

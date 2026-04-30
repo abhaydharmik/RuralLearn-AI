@@ -19,6 +19,18 @@ const frontendAdminEmails = (import.meta.env.VITE_ADMIN_EMAILS || "")
   .filter(Boolean);
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
+export function isPasswordRecoveryRoute(locationLike = window.location) {
+  const search = new URLSearchParams(locationLike.search || "");
+  const hashValue = String(locationLike.hash || "").replace(/^#/, "");
+  const hash = new URLSearchParams(hashValue);
+
+  return (
+    search.get("mode") === "recovery" ||
+    search.get("type") === "recovery" ||
+    hash.get("type") === "recovery"
+  );
+}
+
 function mapSupabaseUser(user) {
   const profile = normalizeProfileFields({
     fullName: user.user_metadata?.full_name,
@@ -283,7 +295,7 @@ export async function requestPasswordReset(email) {
 
   if (hasSupabaseConfig) {
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${window.location.origin}/auth`,
+      redirectTo: `${window.location.origin}/auth?mode=recovery`,
     });
 
     if (error) {
@@ -294,6 +306,26 @@ export async function requestPasswordReset(email) {
   }
 
   return;
+}
+
+export async function completePasswordRecovery(nextPassword) {
+  if (!nextPassword?.trim()) {
+    throw new Error("Enter a new password first.");
+  }
+
+  if (hasSupabaseConfig) {
+    const { error } = await supabase.auth.updateUser({
+      password: nextPassword.trim(),
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return;
+  }
+
+  throw new Error("Password recovery is only available when Supabase authentication is configured.");
 }
 
 export async function logoutEverywhere() {

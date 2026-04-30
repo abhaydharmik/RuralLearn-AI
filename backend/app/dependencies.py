@@ -3,7 +3,7 @@ from functools import lru_cache
 from app.ai.service import TutorAIService
 from app.config import get_settings
 from app.services.learning_service import LearningService
-from app.services.repository import InMemoryRepository, SupabaseRepository
+from app.services.repository import InMemoryRepository, ResilientRepository, SupabaseRepository
 
 try:
     from supabase import create_client
@@ -15,7 +15,10 @@ except ImportError:  # pragma: no cover
 def get_repository():
     settings = get_settings()
     if settings.supabase_url and settings.supabase_service_role_key:
-        return SupabaseRepository(settings)
+        return ResilientRepository(
+            primary=SupabaseRepository(settings),
+            fallback=InMemoryRepository(),
+        )
     return InMemoryRepository()
 
 

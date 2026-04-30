@@ -8,14 +8,16 @@ import {
   ShieldCheck,
   Wifi,
 } from "lucide-react";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
+import { hasSupabaseConfig } from "@/lib/supabase";
+import { isPasswordRecoveryRoute } from "@/services/authService";
 
 const highlights = [
   {
@@ -37,7 +39,8 @@ const highlights = [
 
 export function AuthPage() {
   const navigate = useNavigate();
-  const { login, requestPasswordReset, signup } = useAuth();
+  const location = useLocation();
+  const { completePasswordRecovery, login, requestPasswordReset, signup, user } = useAuth();
   const { showToast } = useToast();
   const [mode, setMode] = useState("login");
   const [formState, setFormState] = useState({
@@ -48,10 +51,20 @@ export function AuthPage() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [sendingReset, setSendingReset] = useState(false);
+  const [completingRecovery, setCompletingRecovery] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [recoveryForm, setRecoveryForm] = useState({
+    nextPassword: "",
+    confirmPassword: "",
+  });
 
   const isSignup = mode === "signup";
+  const isRecoveryMode = useMemo(() => isPasswordRecoveryRoute(location), [location]);
+  const recoveryReady = hasSupabaseConfig && Boolean(user);
+  const recoveryBlockedMessage = !hasSupabaseConfig
+    ? "Password recovery requires Supabase authentication to be configured for this project."
+    : "This recovery link is missing or expired. Request a new password reset email from the login form.";
   const trustPoints = [
     {
       icon: ShieldCheck,
@@ -71,6 +84,13 @@ export function AuthPage() {
     const { name, value } = event.target;
     setFormState((current) => ({ ...current, [name]: value }));
   };
+
+  useEffect(() => {
+    if (isRecoveryMode) {
+      setMode("login");
+      setError("");
+    }
+  }, [isRecoveryMode]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -126,6 +146,48 @@ export function AuthPage() {
     }
   };
 
+  const handleRecoveryChange = (event) => {
+    const { name, value } = event.target;
+    setRecoveryForm((current) => ({ ...current, [name]: value }));
+    setError("");
+  };
+
+  const handlePasswordRecovery = async (event) => {
+    event.preventDefault();
+    setError("");
+
+    if (!recoveryForm.nextPassword || recoveryForm.nextPassword.length < 6) {
+      setError("New password must be at least 6 characters long.");
+      return;
+    }
+
+    if (recoveryForm.nextPassword !== recoveryForm.confirmPassword) {
+      setError("New password and confirm password do not match.");
+      return;
+    }
+
+    setCompletingRecovery(true);
+
+    try {
+      await completePasswordRecovery(recoveryForm.nextPassword);
+      showToast({
+        title: "Password updated",
+        description: "Your password has been reset successfully.",
+        variant: "success",
+      });
+      navigate("/dashboard", { replace: true });
+    } catch (recoveryError) {
+      setError(recoveryError.message);
+      showToast({
+        title: "Password reset failed",
+        description: recoveryError.message,
+        variant: "error",
+      });
+    } finally {
+      setCompletingRecovery(false);
+    }
+  };
+
   return (
     <div className="relative min-h-screen overflow-hidden px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(16,185,129,0.14),transparent_22%),radial-gradient(circle_at_82%_0%,rgba(34,211,238,0.12),transparent_28%),linear-gradient(rgba(148,163,184,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.04)_1px,transparent_1px)] bg-[length:auto,auto,34px_34px,34px_34px]" />
@@ -166,49 +228,105 @@ export function AuthPage() {
         <Card className="animated-enter overflow-hidden border-white/12 bg-[linear-gradient(180deg,rgba(15,23,42,0.96),rgba(15,23,42,0.9)),linear-gradient(135deg,rgba(255,255,255,0.05),transparent_36%)] shadow-[0_30px_80px_rgba(2,6,23,0.55)]">
           <CardContent className="p-0">
             <div className="border-b border-white/10 bg-white/[0.045] p-4 sm:p-6">
-              <div className="relative grid grid-cols-2 rounded-[20px] border border-white/10 bg-slate-950/60 p-1">
-                <div
-                  className={`absolute inset-y-1 w-[calc(50%-4px)] rounded-2xl bg-white shadow-[0_14px_30px_rgba(255,255,255,0.08)] transition-transform duration-300 ${
-                    isSignup ? "translate-x-full" : "translate-x-0"
-                  }`}
-                />
-                <button
-                  type="button"
-                  onClick={() => setMode("login")}
-                  className={`relative z-10 rounded-2xl px-4 py-3 text-sm font-medium transition ${
-                    !isSignup ? "text-slate-950" : "text-slate-300 hover:text-white"
-                  }`}
-                >
-                  Log in
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMode("signup")}
-                  className={`relative z-10 rounded-2xl px-4 py-3 text-sm font-medium transition ${
-                    isSignup ? "text-slate-950" : "text-slate-300 hover:text-white"
-                  }`}
-                >
-                  Sign up
-                </button>
-              </div>
+              {isRecoveryMode ? (
+                <div className="rounded-[20px] border border-primary/20 bg-primary/10 px-4 py-3">
+                  <p className="text-sm font-medium text-primary">Password recovery</p>
+                  <p className="mt-1 text-sm text-slate-300">
+                    Create a new password to restore access to your learning workspace.
+                  </p>
+                </div>
+              ) : (
+                <div className="relative grid grid-cols-2 rounded-[20px] border border-white/10 bg-slate-950/60 p-1">
+                  <div
+                    className={`absolute inset-y-1 w-[calc(50%-4px)] rounded-2xl bg-white shadow-[0_14px_30px_rgba(255,255,255,0.08)] transition-transform duration-300 ${
+                      isSignup ? "translate-x-full" : "translate-x-0"
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setMode("login")}
+                    className={`relative z-10 rounded-2xl px-4 py-3 text-sm font-medium transition ${
+                      !isSignup ? "text-slate-950" : "text-slate-300 hover:text-white"
+                    }`}
+                  >
+                    Log in
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMode("signup")}
+                    className={`relative z-10 rounded-2xl px-4 py-3 text-sm font-medium transition ${
+                      isSignup ? "text-slate-950" : "text-slate-300 hover:text-white"
+                    }`}
+                  >
+                    Sign up
+                  </button>
+                </div>
+              )}
             </div>
 
-            <form className="space-y-5 p-4 sm:p-6" onSubmit={handleSubmit}>
+            <form className="space-y-5 p-4 sm:p-6" onSubmit={isRecoveryMode ? handlePasswordRecovery : handleSubmit}>
               <div>
                 <p className="text-sm uppercase tracking-[0.25em] text-primary/70">
-                  {isSignup ? "Create account" : "Welcome back"}
+                  {isRecoveryMode ? "Reset password" : isSignup ? "Create account" : "Welcome back"}
                 </p>
                 <h2 className="mt-2 text-2xl font-semibold text-white">
-                  {isSignup ? "Start the learning journey" : "Continue learning"}
+                  {isRecoveryMode
+                    ? "Set a new password"
+                    : isSignup
+                      ? "Start the learning journey"
+                      : "Continue learning"}
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-slate-400">
-                  {isSignup
-                    ? "Create a student account to save quizzes, revision plans, and learning analytics."
-                    : "Sign in to continue with your tutor, quizzes, revision mode, and dashboards."}
+                  {isRecoveryMode
+                    ? "Choose a secure new password, then return to your learning dashboard."
+                    : isSignup
+                      ? "Create a student account to save quizzes, revision plans, and learning analytics."
+                      : "Sign in to continue with your tutor, quizzes, revision mode, and dashboards."}
                 </p>
               </div>
 
-              {isSignup ? (
+              {isRecoveryMode ? (
+                <>
+                  {!recoveryReady ? (
+                    <div className="rounded-2xl border border-danger/25 bg-danger/10 px-4 py-3 text-sm text-red-200">
+                      {recoveryBlockedMessage}
+                    </div>
+                  ) : null}
+                  <div className="space-y-2">
+                    <label className="text-sm text-slate-300">New password</label>
+                    <div className="relative">
+                      <Input
+                        name="nextPassword"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Create a new password"
+                        value={recoveryForm.nextPassword}
+                        onChange={handleRecoveryChange}
+                        className="pr-14"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((current) => !current)}
+                        className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-slate-400 transition hover:text-white"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm text-slate-300">Confirm new password</label>
+                    <Input
+                      name="confirmPassword"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Confirm the new password"
+                      value={recoveryForm.confirmPassword}
+                      onChange={handleRecoveryChange}
+                      required
+                    />
+                  </div>
+                </>
+              ) : isSignup ? (
                 <>
                   <div className="space-y-2">
                     <label className="text-sm text-slate-300">Full name</label>
@@ -233,40 +351,44 @@ export function AuthPage() {
                 </>
               ) : null}
 
-              <div className="space-y-2">
-                <label className="text-sm text-slate-300">Email</label>
-                <Input
-                  name="email"
-                  type="email"
-                  placeholder="student@example.com"
-                  value={formState.email}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
+              {!isRecoveryMode ? (
+                <>
+                  <div className="space-y-2">
+                    <label className="text-sm text-slate-300">Email</label>
+                    <Input
+                      name="email"
+                      type="email"
+                      placeholder="student@example.com"
+                      value={formState.email}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
 
-              <div className="space-y-2">
-                <label className="text-sm text-slate-300">Password</label>
-                <div className="relative">
-                  <Input
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Enter password"
-                    value={formState.password}
-                    onChange={handleChange}
-                    className="pr-14"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((current) => !current)}
-                    className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-slate-400 transition hover:text-white"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
+                  <div className="space-y-2">
+                    <label className="text-sm text-slate-300">Password</label>
+                    <div className="relative">
+                      <Input
+                        name="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Enter password"
+                        value={formState.password}
+                        onChange={handleChange}
+                        className="pr-14"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((current) => !current)}
+                        className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-slate-400 transition hover:text-white"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              ) : null}
 
               {error ? (
                 <div className="rounded-2xl border border-danger/25 bg-danger/10 px-4 py-3 text-sm text-red-200">
@@ -274,7 +396,7 @@ export function AuthPage() {
                 </div>
               ) : null}
 
-              {!isSignup ? (
+              {!isRecoveryMode && !isSignup ? (
                 <div className="flex items-center justify-end">
                   <button
                     type="button"
@@ -287,8 +409,23 @@ export function AuthPage() {
                 </div>
               ) : null}
 
-              <Button className="w-full" size="lg" type="submit" disabled={submitting}>
-                {submitting ? "Please wait..." : isSignup ? "Create account" : "Log in"}
+              <Button
+                className="w-full"
+                size="lg"
+                type="submit"
+                disabled={
+                  isRecoveryMode ? completingRecovery || !recoveryReady : submitting
+                }
+              >
+                {isRecoveryMode
+                  ? completingRecovery
+                    ? "Updating password..."
+                    : "Save new password"
+                  : submitting
+                    ? "Please wait..."
+                    : isSignup
+                      ? "Create account"
+                      : "Log in"}
                 <ArrowRight className="h-4 w-4" />
               </Button>
 

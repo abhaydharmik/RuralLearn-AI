@@ -9,18 +9,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ChatPageSkeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/context/AuthContext";
+import { useI18n } from "@/context/I18nContext";
 import { useToast } from "@/context/ToastContext";
 import { fetchChatHistory, fetchProgress, sendChatMessage } from "@/services/learningService";
 
-const promptSuggestions = [
-  "Explain fractions with a real-life example.",
-  "What is photosynthesis in simple words?",
-  "Teach me algebra step by step.",
-  "Explain nouns and verbs for beginners.",
-];
-
 export function ChatPage() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const { showToast } = useToast();
   const [messages, setMessages] = useState([]);
   const [question, setQuestion] = useState("");
@@ -35,33 +30,46 @@ export function ChatPage() {
     setLoadingPage(true);
     Promise.all([fetchChatHistory(user.id), fetchProgress(user.id)])
       .then(([chatHistory, progress]) => {
-        setMessages(chatHistory);
+        const translatedHistory =
+          chatHistory.length === 1 &&
+          chatHistory[0]?.role === "assistant" &&
+          String(chatHistory[0]?.content || "").startsWith("Hello! I am your AI tutor")
+            ? [{ ...chatHistory[0], content: t("chat.initialWelcome") }]
+            : chatHistory;
+        setMessages(translatedHistory);
         setDifficulty(progress.currentDifficulty);
       })
       .catch((fetchError) => {
         setError(fetchError.message);
-        showToast({ title: "Tutor unavailable", description: fetchError.message, variant: "error" });
+        showToast({ title: t("chat.tutorUnavailable"), description: fetchError.message, variant: "error" });
       })
       .finally(() => setLoadingPage(false));
-  }, [showToast, user?.id]);
+  }, [showToast, t, user?.id]);
+
+  const promptSuggestions = [
+    t("chat.prompt1"),
+    t("chat.prompt2"),
+    t("chat.prompt3"),
+    t("chat.prompt4"),
+  ];
 
   const helperText = useMemo(() => {
     const styleLead =
       user?.explanationStyle === "Detailed"
-        ? "The tutor will try to give fuller step-by-step guidance."
+        ? t("chat.helperDetailed")
         : user?.explanationStyle === "Normal"
-          ? "The tutor will balance clarity with a little more detail."
-          : "The tutor will keep explanations very short and simple.";
+          ? t("chat.helperNormal")
+          : t("chat.helperShort");
     const languageLead =
       user?.language && user.language !== "English"
-        ? ` Preferred language mode is ${user.language}.`
+        ? ` ${t("chat.helperLanguage", { language: user.language })}`
         : "";
     if (difficulty === "Hard")
-      return `${styleLead} The system is ready to challenge the student with deeper follow-up questions.${languageLead}`;
+      return `${styleLead} ${t("chat.helperHard")}${languageLead}`;
     if (difficulty === "Medium")
-      return `${styleLead} The system is balancing confidence-building with slightly tougher explanations.${languageLead}`;
-    return `${styleLead} The system is keeping explanations short and beginner-friendly for confidence.${languageLead}`;
-  }, [difficulty, user?.explanationStyle, user?.language]);
+      return `${styleLead} ${t("chat.helperMedium")}${languageLead}`;
+    return `${styleLead} ${t("chat.helperEasy")}${languageLead}`;
+  }, [difficulty, t, user?.explanationStyle, user?.language]);
 
   const handleSend = async (event) => {
     event.preventDefault();
@@ -77,11 +85,16 @@ export function ChatPage() {
     setSending(true);
     setError("");
     try {
-      const response = await sendChatMessage({ question: userMessage.content, difficulty, userId: user?.id });
+      const response = await sendChatMessage({
+        question: userMessage.content,
+        difficulty,
+        userId: user?.id,
+        language: user?.language || "English",
+      });
       setMessages((current) => [...current, response]);
     } catch (sendError) {
       setError(sendError.message);
-      showToast({ title: "Message failed", description: sendError.message, variant: "error" });
+      showToast({ title: t("chat.tutorUnavailable"), description: sendError.message, variant: "error" });
     } finally {
       setSending(false);
     }
@@ -92,16 +105,16 @@ export function ChatPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="AI Tutor"
-        title="Conversational learning support"
-        description="Students can ask questions in simple language and receive short, beginner-friendly explanations."
-        badge={`Adaptive mode: ${difficulty}`}
+        eyebrow={t("chat.eyebrow")}
+        title={t("chat.title")}
+        description={t("chat.description")}
+        badge={t("chat.adaptiveMode", { difficulty })}
       />
 
       {error ? (
         <Card>
           <CardContent className="p-4 text-[13px] text-rose-300/90">
-            AI Tutor could not connect: {error}
+            {t("chat.tutorCouldNotConnect", { error })}
           </CardContent>
         </Card>
       ) : null}
@@ -118,7 +131,7 @@ export function ChatPage() {
               {sending ? (
                 <div className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.04] px-4 py-3 text-[13px] text-slate-400">
                   <LoaderCircle className="h-3.5 w-3.5 animate-spin text-primary" />
-                  Thinking of a simple explanation...
+                  {t("chat.thinking")}
                 </div>
               ) : null}
             </div>
@@ -128,7 +141,7 @@ export function ChatPage() {
               onSubmit={handleSend}
             >
               <Textarea
-                placeholder="Ask any question. Example: Explain gravity in simple words."
+                placeholder={t("chat.placeholder")}
                 value={question}
                 onChange={(event) => setQuestion(event.target.value)}
               />
@@ -136,7 +149,7 @@ export function ChatPage() {
                 <p className="max-w-xl text-[12px] leading-relaxed text-slate-500">{helperText}</p>
                 <Button className="w-full sm:w-auto" type="submit" disabled={sending}>
                   <SendHorizonal className="h-3.5 w-3.5" />
-                  Send question
+                  {t("chat.sendQuestion")}
                 </Button>
               </div>
             </form>
@@ -154,8 +167,8 @@ export function ChatPage() {
                   <Sparkles className="h-4 w-4" />
                 </div>
                 <div>
-                  <h2 className="text-[13px] font-semibold text-white">Prompt ideas</h2>
-                  <p className="text-[11px] text-slate-500">Helpful starters for rural learners</p>
+                  <h2 className="text-[13px] font-semibold text-white">{t("chat.promptIdeas")}</h2>
+                  <p className="text-[11px] text-slate-500">{t("chat.helpfulStarters")}</p>
                 </div>
               </div>
               <div className="space-y-2">
@@ -176,14 +189,14 @@ export function ChatPage() {
           {/* Tutor behavior */}
           <Card>
             <CardContent className="space-y-3.5 p-4">
-              <h2 className="text-[13px] font-semibold text-white">Tutor behavior</h2>
+              <h2 className="text-[13px] font-semibold text-white">{t("chat.tutorBehavior")}</h2>
               <div className="flex flex-wrap gap-1.5">
                 <Badge>{user?.explanationStyle || "Very simple"}</Badge>
                 <Badge variant="secondary">{user?.language || "English"}</Badge>
-                <Badge variant="secondary">Low-bandwidth friendly</Badge>
+                <Badge variant="secondary">{t("common.lowBandwidthFriendly")}</Badge>
               </div>
               <p className="text-[12px] leading-relaxed text-slate-500">
-                The tutor is designed to keep responses clear, supportive, and easy to read on small devices.
+                {t("chat.tutorBehaviorDescription")}
               </p>
             </CardContent>
           </Card>

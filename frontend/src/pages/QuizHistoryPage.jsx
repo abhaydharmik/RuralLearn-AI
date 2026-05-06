@@ -8,12 +8,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { DetailPageSkeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/AuthContext";
+import { useI18n } from "@/context/I18nContext";
 import { useToast } from "@/context/ToastContext";
 import { formatPercent } from "@/lib/utils";
 import { fetchQuizHistory } from "@/services/learningService";
 
 export function QuizHistoryPage() {
   const { user } = useAuth();
+  const { t, formatDateTime } = useI18n();
   const { showToast } = useToast();
   const [history, setHistory] = useState([]);
   const [expandedId, setExpandedId] = useState(null);
@@ -27,26 +29,26 @@ export function QuizHistoryPage() {
       .then((data) => setHistory(data.results || []))
       .catch((fetchError) => {
         setError(fetchError.message);
-        showToast({ title: "History unavailable", description: fetchError.message, variant: "error" });
+        showToast({ title: t("history.historyUnavailable"), description: fetchError.message, variant: "error" });
       })
       .finally(() => setLoading(false));
-  }, [showToast, user?.id]);
+  }, [showToast, t, user?.id]);
 
   if (loading) return <DetailPageSkeleton />;
 
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Quiz History"
-        title="Review every submitted quiz"
-        description="Students can revisit feedback, correct answers, explanations, and progress from previous practice sets."
-        badge={`${history.length} submissions`}
+        eyebrow={t("history.eyebrow")}
+        title={t("history.title")}
+        description={t("history.description")}
+        badge={t("history.submissions", { count: history.length })}
       />
 
       {error ? (
         <Card>
           <CardContent className="p-4 text-[13px] text-rose-300/90">
-            Quiz history could not load: {error}
+            {t("history.historyCouldNotLoad", { error })}
           </CardContent>
         </Card>
       ) : null}
@@ -63,10 +65,7 @@ export function QuizHistoryPage() {
                       <CardTitle className="break-words">{entry.topic}</CardTitle>
                       <p className="mt-1.5 flex items-center gap-1.5 text-[12px] text-slate-500">
                         <CalendarClock className="h-3.5 w-3.5" />
-                        {new Date(entry.submittedAt).toLocaleString(undefined, {
-                          day: "numeric", month: "short", year: "numeric",
-                          hour: "2-digit", minute: "2-digit",
-                        })}
+                        {formatDateTime(entry.submittedAt)}
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-1.5">
@@ -75,7 +74,10 @@ export function QuizHistoryPage() {
                       </Badge>
                       <Badge variant="secondary">{entry.difficulty}</Badge>
                       <Badge variant="secondary">
-                        {entry.correctAnswers}/{entry.totalQuestions} correct
+                        {t("history.correctSummary", {
+                          correct: entry.correctAnswers,
+                          total: entry.totalQuestions,
+                        })}
                       </Badge>
                     </div>
                   </div>
@@ -91,7 +93,7 @@ export function QuizHistoryPage() {
                   </div>
 
                   <p className="rounded-xl border border-white/[0.07] bg-white/[0.04] px-4 py-3 text-[13px] leading-relaxed text-slate-300">
-                    {entry.feedback || "No feedback was saved for this quiz."}
+                    {entry.feedback || t("history.noFeedback")}
                   </p>
 
                   <Button
@@ -103,7 +105,7 @@ export function QuizHistoryPage() {
                     ) : (
                       <ChevronDown className="h-3.5 w-3.5" />
                     )}
-                    {isExpanded ? "Hide answers" : "Review answers"}
+                    {isExpanded ? t("history.hideAnswers") : t("history.reviewAnswers")}
                   </Button>
 
                   {isExpanded ? (
@@ -117,11 +119,13 @@ export function QuizHistoryPage() {
                             {index + 1}. {item.question}
                           </p>
                           <p className="mt-2 text-[12px] text-slate-400">
-                            Your answer: {item.selectedAnswer || "Not answered"}
+                            {t("history.yourAnswer", {
+                              answer: item.selectedAnswer || t("history.notAnswered"),
+                            })}
                           </p>
                           <p className="mt-1.5 flex items-center gap-1.5 text-[12px] text-emerald-400">
                             <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0" />
-                            Correct answer: {item.correctAnswer}
+                            {t("history.correctAnswer", { answer: item.correctAnswer })}
                           </p>
                           <p className="mt-2 text-[12px] leading-relaxed text-slate-500">{item.explanation}</p>
                         </div>
@@ -135,7 +139,7 @@ export function QuizHistoryPage() {
         ) : (
           <Card>
             <CardContent className="p-6 text-[13px] leading-relaxed text-slate-500">
-              No quiz submissions yet. Complete a quiz to build this history.
+              {t("history.noHistory")}
             </CardContent>
           </Card>
         )}

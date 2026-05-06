@@ -9,12 +9,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { DashboardSkeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/AuthContext";
+import { useI18n } from "@/context/I18nContext";
 import { useToast } from "@/context/ToastContext";
 import { formatPercent } from "@/lib/utils";
 import { fetchProgress } from "@/services/learningService";
 
 export function DashboardPage() {
   const { user } = useAuth();
+  const { t, formatDate } = useI18n();
   const { showToast } = useToast();
   const [progress, setProgress] = useState(null);
   const [error, setError] = useState("");
@@ -26,15 +28,15 @@ export function DashboardPage() {
       .then(setProgress)
       .catch((fetchError) => {
         setError(fetchError.message);
-        showToast({ title: "Dashboard unavailable", description: fetchError.message, variant: "error" });
+        showToast({ title: t("dashboard.dashboardUnavailable"), description: fetchError.message, variant: "error" });
       });
-  }, [showToast, user?.id]);
+  }, [showToast, t, user?.id]);
 
   if (error) {
     return (
-      <Card>
+        <Card>
         <CardContent className="p-4 text-[13px] text-rose-300/90">
-          Dashboard data could not load: {error}
+          {t("dashboard.dashboardCouldNotLoad", { error })}
         </CardContent>
       </Card>
     );
@@ -47,37 +49,37 @@ export function DashboardPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Dashboard"
-        title={`Hello, ${user?.fullName?.split(" ")[0] || "Student"}`}
-        description="A calm overview of how the student is learning, where support is needed, and what to focus on next."
-        badge={`Current difficulty: ${progress.currentDifficulty}`}
+        eyebrow={t("dashboard.eyebrow")}
+        title={t("dashboard.greeting", { name: user?.fullName?.split(" ")[0] || t("common.student") })}
+        description={t("dashboard.description")}
+        badge={t("dashboard.currentDifficulty", { difficulty: progress.currentDifficulty })}
       />
 
       {/* ── Stat cards ── */}
       <section className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           icon={CircleGauge}
-          label="Accuracy"
+          label={t("dashboard.accuracy")}
           value={formatPercent(progress.accuracy)}
-          hint="Average score across completed quizzes"
+          hint={t("dashboard.accuracyHint")}
         />
         <StatCard
           icon={BookCheck}
-          label="Completed quizzes"
+          label={t("dashboard.completedQuizzes")}
           value={progress.completedQuizzes}
-          hint="Every quiz improves the learning profile"
+          hint={t("dashboard.completedQuizzesHint")}
         />
         <StatCard
           icon={Target}
-          label="Weak topics"
+          label={t("dashboard.weakTopics")}
           value={progress.weakTopics.length}
-          hint="Topics needing more revision right now"
+          hint={t("dashboard.weakTopicsHint")}
         />
         <StatCard
           icon={TrendingUp}
-          label="Adaptive level"
+          label={t("dashboard.adaptiveLevel")}
           value={progress.currentDifficulty}
-          hint="Auto-adjusted using latest overall performance"
+          hint={t("dashboard.adaptiveLevelHint")}
         />
       </section>
 
@@ -93,7 +95,7 @@ export function DashboardPage() {
         {/* Priority learning areas */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle>Priority learning areas</CardTitle>
+            <CardTitle>{t("dashboard.priorityAreas")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {hasResults ? (
@@ -110,14 +112,14 @@ export function DashboardPage() {
                       <div className="min-w-0">
                         <p className="text-[13px] font-semibold text-white">{entry.topic}</p>
                         <p className="mt-0.5 text-[12px] leading-relaxed text-slate-500">
-                          Focus on short examples and one follow-up practice question.
+                          {t("dashboard.focusExample")}
                         </p>
                       </div>
                       <Badge
                         className="flex-shrink-0 self-start"
                         variant={index === 0 ? "warning" : "secondary"}
                       >
-                        {index === 0 ? "Most urgent" : "Needs review"}
+                        {index === 0 ? t("dashboard.mostUrgent") : t("dashboard.needsReview")}
                       </Badge>
                     </div>
                     <div className="mt-3.5 space-y-1.5">
@@ -133,7 +135,7 @@ export function DashboardPage() {
                 ))
             ) : (
               <div className="rounded-xl border border-dashed border-white/[0.08] p-5 text-[13px] leading-relaxed text-slate-500">
-                No weak-topic insights yet. Complete the first quiz to generate personalized study priorities.
+                {t("dashboard.noWeakTopics")}
               </div>
             )}
           </CardContent>
@@ -142,7 +144,7 @@ export function DashboardPage() {
         {/* Recent quiz activity */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle>Recent quiz activity</CardTitle>
+            <CardTitle>{t("dashboard.recentQuizActivity")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2.5">
             {progress.recentResults.length ? (
@@ -154,11 +156,7 @@ export function DashboardPage() {
                   <div className="min-w-0">
                     <p className="text-[13px] font-semibold text-white">{entry.topic}</p>
                     <p className="mt-0.5 text-[11px] text-slate-500">
-                      {new Date(entry.submittedAt).toLocaleDateString(undefined, {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
+                      {formatDate(entry.submittedAt)}
                     </p>
                   </div>
                   <Badge
@@ -171,7 +169,7 @@ export function DashboardPage() {
               ))
             ) : (
               <div className="rounded-xl border border-dashed border-white/[0.08] p-5 text-[13px] leading-relaxed text-slate-500">
-                No quizzes yet. Start from the quiz page to build the student profile.
+                {t("dashboard.noQuizActivity")}
               </div>
             )}
           </CardContent>

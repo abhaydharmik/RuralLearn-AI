@@ -24,6 +24,7 @@ class QuizRequest(APIModel):
     topic: str = Field(..., min_length=2, max_length=120)
     difficulty: DifficultyLevel | None = None
     user_id: str | None = Field(default=None, alias="userId")
+    language: str | None = Field(default=None, max_length=40)
 
     @field_validator("topic")
     @classmethod
@@ -45,6 +46,7 @@ class QuizSubmissionRequest(APIModel):
     questions: list[QuizQuestion] = Field(..., min_length=1)
     answers: dict[str, str] = Field(default_factory=dict)
     user_id: str | None = Field(default=None, alias="userId")
+    language: str | None = Field(default=None, max_length=40)
 
 
 class QuestionReview(APIModel):

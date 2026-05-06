@@ -8,11 +8,13 @@ import { Input } from "@/components/ui/input";
 import { QuizPageSkeleton } from "@/components/ui/skeleton";
 import { QuizQuestionCard, QuizResultCard } from "@/components/quiz/QuizQuestionCard";
 import { useAuth } from "@/context/AuthContext";
+import { useI18n } from "@/context/I18nContext";
 import { useToast } from "@/context/ToastContext";
 import { createQuiz, fetchProgress, submitQuiz } from "@/services/learningService";
 
 export function QuizPage() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const { showToast } = useToast();
   const [topic, setTopic] = useState("Fractions");
   const [difficulty, setDifficulty] = useState("Easy");
@@ -34,10 +36,10 @@ export function QuizPage() {
       )
       .catch((fetchError) => {
         setError(fetchError.message);
-        showToast({ title: "Quiz settings unavailable", description: fetchError.message, variant: "error" });
+        showToast({ title: t("quiz.quizSettingsUnavailable"), description: fetchError.message, variant: "error" });
       })
       .finally(() => setLoadingPage(false));
-  }, [showToast, user?.id, user?.quizMode]);
+  }, [showToast, t, user?.id, user?.quizMode]);
 
   const handleGenerateQuiz = async () => {
     setGeneratingQuiz(true);
@@ -46,7 +48,12 @@ export function QuizPage() {
     setResult(null);
     setError("");
     try {
-      const generatedQuiz = await createQuiz({ topic, difficulty, userId: user?.id });
+      const generatedQuiz = await createQuiz({
+        topic,
+        difficulty,
+        userId: user?.id,
+        language: user?.language || "English",
+      });
       if (!generatedQuiz?.questions || generatedQuiz.questions.length !== 5) {
         console.warn("Invalid quiz received");
         setQuiz(null);
@@ -54,10 +61,14 @@ export function QuizPage() {
       }
       setQuiz(generatedQuiz);
       setAnswers({});
-      showToast({ title: "Quiz ready", description: `Generated 5 questions for ${generatedQuiz.topic}.`, variant: "success" });
+      showToast({
+        title: t("quiz.generate"),
+        description: `${generatedQuiz.topic}: 5 MCQs`,
+        variant: "success",
+      });
     } catch (generateError) {
       setError(generateError.message);
-      showToast({ title: "Quiz generation failed", description: generateError.message, variant: "error" });
+      showToast({ title: t("quiz.quizActionFailed", { error: "" }).replace(": ", ""), description: generateError.message, variant: "error" });
     } finally {
       setGeneratingQuiz(false);
     }
@@ -72,14 +83,20 @@ export function QuizPage() {
     setSubmittingQuiz(true);
     setError("");
     try {
-      const submission = await submitQuiz({ topic: quiz.topic, questions: quiz.questions, answers, userId: user?.id });
+      const submission = await submitQuiz({
+        topic: quiz.topic,
+        questions: quiz.questions,
+        answers,
+        userId: user?.id,
+        language: user?.language || "English",
+      });
       setResult(submission);
       const updatedProgress = await fetchProgress(user?.id);
       setDifficulty(user?.quizMode && user.quizMode !== "Auto" ? user.quizMode : updatedProgress.currentDifficulty);
-      showToast({ title: "Quiz submitted", description: `Score saved successfully: ${Math.round(submission.score)}%.`, variant: "success" });
+      showToast({ title: t("quiz.submitQuiz"), description: `${t("common.score")}: ${Math.round(submission.score)}%`, variant: "success" });
     } catch (submitError) {
       setError(submitError.message);
-      showToast({ title: "Quiz submission failed", description: submitError.message, variant: "error" });
+      showToast({ title: t("quiz.submitQuiz"), description: submitError.message, variant: "error" });
     } finally {
       setSubmittingQuiz(false);
     }
@@ -90,21 +107,21 @@ export function QuizPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Quiz Lab"
-        title="Generate adaptive practice sets"
-        description="Create 5-question MCQ quizzes, submit answers instantly, and let the system adjust difficulty based on performance."
-        badge={`Suggested level: ${difficulty}`}
+        eyebrow={t("quiz.eyebrow")}
+        title={t("quiz.title")}
+        description={t("quiz.description")}
+        badge={t("quiz.suggestedLevel", { difficulty })}
       />
 
       {/* ── Topic input ── */}
       <Card>
         <CardContent className="grid gap-4 p-4 sm:p-5 xl:grid-cols-[1fr_auto] xl:items-end">
           <div className="space-y-2">
-            <label className="text-[13px] font-medium text-slate-400">Topic</label>
+            <label className="text-[13px] font-medium text-slate-400">{t("quiz.topic")}</label>
             <Input
               value={topic}
               onChange={(event) => setTopic(event.target.value)}
-              placeholder="Enter a topic like fractions or photosynthesis"
+              placeholder={t("quiz.topicPlaceholder")}
             />
           </div>
           <Button
@@ -117,7 +134,7 @@ export function QuizPage() {
             ) : (
               <Sparkles className="h-3.5 w-3.5" />
             )}
-            Generate 5 MCQs
+            {t("quiz.generate")}
           </Button>
         </CardContent>
       </Card>
@@ -125,7 +142,7 @@ export function QuizPage() {
       {error ? (
         <Card>
           <CardContent className="p-4 text-[13px] text-rose-300/90">
-            Quiz action failed: {error}
+            {t("quiz.quizActionFailed", { error })}
           </CardContent>
         </Card>
       ) : null}
@@ -139,11 +156,10 @@ export function QuizPage() {
             </div>
             <div>
               <h2 className="text-lg font-semibold tracking-tight text-white sm:text-xl">
-                Start a personalized quiz
+                {t("quiz.startQuiz")}
               </h2>
               <p className="mt-2 max-w-md text-[13px] leading-relaxed text-slate-500">
-                The generator creates five MCQs with answers and explanations,
-                tuned to the student&apos;s current performance level.
+                {t("quiz.generatorDescription")}
               </p>
             </div>
           </CardContent>
@@ -153,9 +169,9 @@ export function QuizPage() {
           {/* Quiz header */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="break-words">{`${quiz.topic} quiz`}</CardTitle>
+              <CardTitle className="break-words">{t("quiz.quizSuffix", { topic: quiz.topic })}</CardTitle>
               <p className="text-[13px] text-slate-500">
-                Difficulty: {quiz.difficulty}. Answer all questions, then submit for feedback.
+                {t("quiz.difficultyLine", { difficulty: quiz.difficulty })}
               </p>
             </CardHeader>
           </Card>
@@ -172,7 +188,7 @@ export function QuizPage() {
             ))
           ) : (
             <p className="text-center text-[13px] text-slate-500">
-              No questions generated. Try again.
+              {t("quiz.noQuestionsGenerated")}
             </p>
           )}
 
@@ -182,7 +198,7 @@ export function QuizPage() {
               onClick={handleSubmit}
               disabled={submittingQuiz || generatingQuiz}
             >
-              {submittingQuiz ? "Submitting..." : "Submit quiz"}
+              {submittingQuiz ? t("quiz.submitting") : t("quiz.submitQuiz")}
             </Button>
           </div>
 

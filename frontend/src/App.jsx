@@ -4,6 +4,7 @@ import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
 
 import { AppShell } from "@/components/layout/AppShell";
 import { useAuth } from "@/context/AuthContext";
+import { useI18n } from "@/context/I18nContext";
 import { AuthPage } from "@/pages/AuthPage";
 import { isPasswordRecoveryRoute } from "@/services/authService";
 
@@ -35,11 +36,13 @@ const ProfilePage = lazy(() =>
 );
 
 function AppLoader() {
+  const { t } = useI18n();
+
   return (
     <div className="flex min-h-screen items-center justify-center">
       <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-900/70 px-5 py-4 text-sm text-slate-300">
         <LoaderCircle className="h-4 w-4 animate-spin text-primary" />
-        Loading learning workspace...
+        {t("common.loadingWorkspace")}
       </div>
     </div>
   );

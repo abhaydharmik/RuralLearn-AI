@@ -15,29 +15,31 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useMemo, useState } from "react";
 
 import { Avatar } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/context/I18nContext";
 import { cn } from "@/lib/utils";
 
 const navigation = [
-  { label: "Dashboard", icon: LayoutDashboard, to: "/dashboard" },
-  { label: "AI Tutor", icon: BrainCircuit, to: "/chat" },
-  { label: "Quiz Lab", icon: BookOpen, to: "/quiz" },
-  { label: "Revision", icon: NotebookPen, to: "/revision" },
-  { label: "History", icon: History, to: "/history" },
-  { label: "Analytics", icon: ChartColumnBig, to: "/analytics" },
-  { label: "Admin", icon: ShieldCheck, to: "/admin", adminOnly: true },
+  { key: "dashboard", labelKey: "nav.dashboard", icon: LayoutDashboard, to: "/dashboard" },
+  { key: "chat", labelKey: "nav.aiTutor", icon: BrainCircuit, to: "/chat" },
+  { key: "quiz", labelKey: "nav.quizLab", icon: BookOpen, to: "/quiz" },
+  { key: "revision", labelKey: "nav.revision", icon: NotebookPen, to: "/revision" },
+  { key: "history", labelKey: "nav.history", icon: History, to: "/history" },
+  { key: "analytics", labelKey: "nav.analytics", icon: ChartColumnBig, to: "/analytics" },
+  { key: "admin", labelKey: "nav.admin", icon: ShieldCheck, to: "/admin", adminOnly: true },
 ];
 
 function SidebarContent({ user, onClose, onLogout }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useI18n();
   const visibleNavigation = navigation.filter((item) => !item.adminOnly || user?.isAdmin);
 
   const activeLabel = useMemo(() => {
-    if (location.pathname.startsWith("/profile")) return "Profile";
-    return navigation.find((item) => location.pathname.startsWith(item.to))?.label || "Workspace";
-  }, [location.pathname]);
+    if (location.pathname.startsWith("/profile")) return t("common.profile");
+    const activeItem = navigation.find((item) => location.pathname.startsWith(item.to));
+    return activeItem ? t(activeItem.labelKey) : t("nav.workspace");
+  }, [location.pathname, t]);
 
   const handleOpenProfile = () => {
     navigate("/profile");
@@ -55,7 +57,7 @@ function SidebarContent({ user, onClose, onLogout }) {
               RuralLearn AI
             </p>
             <h2 className="mt-1.5 text-base font-semibold leading-snug text-white sm:text-[17px]">
-              Your Smart Learning<br />Companion
+              {t("nav.brandTitle")}
             </h2>
           </div>
           <Button className="lg:hidden" size="icon" variant="ghost" onClick={onClose}>
@@ -68,11 +70,11 @@ function SidebarContent({ user, onClose, onLogout }) {
           {/* subtle glow blob */}
           <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-primary/20 blur-2xl" />
           <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-primary/60">
-            Focus today
+            {t("nav.focusToday")}
           </p>
           <p className="mt-2 text-base font-semibold text-white">{activeLabel}</p>
           <p className="mt-1.5 text-[12px] leading-relaxed text-slate-400">
-            Keep explanations simple, practice regularly, and grow with each quiz.
+            {t("nav.focusDescription")}
           </p>
         </div>
 
@@ -93,7 +95,7 @@ function SidebarContent({ user, onClose, onLogout }) {
               }
             >
               <item.icon className="h-4 w-4 flex-shrink-0" />
-              <span>{item.label}</span>
+              <span>{t(item.labelKey)}</span>
             </NavLink>
           ))}
         </nav>
@@ -120,7 +122,7 @@ function SidebarContent({ user, onClose, onLogout }) {
           </div>
           <div className="min-w-0">
             <p className="truncate text-[13px] font-semibold tracking-tight text-slate-100">
-              {user?.fullName || "Student"}
+              {user?.fullName || t("common.student")}
             </p>
             <p className="truncate text-[11px] text-slate-500 mt-0.5">{user?.email}</p>
           </div>
@@ -136,7 +138,7 @@ function SidebarContent({ user, onClose, onLogout }) {
           </span>
           <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-500 transition-colors hover:text-slate-300">
             <Settings2 className="h-3 w-3" />
-            Profile
+            {t("common.profile")}
           </span>
         </div>
 
@@ -150,7 +152,7 @@ function SidebarContent({ user, onClose, onLogout }) {
           }}
         >
           <LogOut className="h-3.5 w-3.5" />
-          Sign out
+          {t("common.signOut")}
         </Button>
       </div>
     </div>
@@ -158,6 +160,7 @@ function SidebarContent({ user, onClose, onLogout }) {
 }
 
 function MobileBottomNav({ user }) {
+  const { t } = useI18n();
   const visibleNavigation = navigation.filter((item) => !item.adminOnly || user?.isAdmin);
 
   return (
@@ -176,8 +179,8 @@ function MobileBottomNav({ user }) {
               )
             }
           >
-            <item.icon className="h-4 w-4" />
-            <span className="truncate">{item.label}</span>
+              <item.icon className="h-4 w-4" />
+            <span className="truncate">{t(item.labelKey)}</span>
           </NavLink>
         ))}
       </nav>
@@ -187,6 +190,7 @@ function MobileBottomNav({ user }) {
 
 export function AppShell({ user, onLogout, children }) {
   const [isOpen, setIsOpen] = useState(false);
+  const { t } = useI18n();
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-transparent lg:h-screen lg:overflow-hidden">
@@ -222,10 +226,10 @@ export function AppShell({ user, onLogout, children }) {
             <div className="mx-auto flex w-full max-w-[1120px] items-center justify-between px-4 py-3.5 sm:px-6 xl:max-w-[1180px]">
               <div className="min-w-0 pr-3">
                 <p className="text-[10px] font-medium uppercase tracking-[0.24em] text-primary/70 sm:tracking-[0.3em]">
-                  {user?.isAdmin ? "Admin Workspace" : "Student Workspace"}
+                  {user?.isAdmin ? t("common.adminWorkspace") : t("common.studentWorkspace")}
                 </p>
                 <h1 className="mt-1 text-[15px] font-semibold text-white sm:text-base">
-                  Personalized Learning Suite
+                  {t("common.personalizedLearningSuite")}
                 </h1>
               </div>
               <Button

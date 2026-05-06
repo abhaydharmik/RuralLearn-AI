@@ -31,6 +31,7 @@ import { Input } from "@/components/ui/input";
 import { ProfileSkeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/context/AuthContext";
+import { useI18n } from "@/context/I18nContext";
 import { useToast } from "@/context/ToastContext";
 import { formatPercent } from "@/lib/utils";
 import { fetchChatHistory, fetchProgress, fetchQuizHistory } from "@/services/learningService";
@@ -84,6 +85,7 @@ function buildInitialState(user) {
 
 export function ProfilePage() {
   const { user, updateProfile, changePassword, logoutEverywhere } = useAuth();
+  const { t, formatDateTime } = useI18n();
   const { showToast } = useToast();
   const [formState, setFormState] = useState(() => buildInitialState(user));
   const [progress, setProgress] = useState(null);
@@ -119,14 +121,14 @@ export function ProfilePage() {
       .catch((fetchError) => {
         if (mounted) {
           setError(fetchError.message);
-          showToast({ title: "Profile data unavailable", description: fetchError.message, variant: "error" });
+          showToast({ title: t("profile.profileDataUnavailable"), description: fetchError.message, variant: "error" });
         }
       })
       .finally(() => {
         if (mounted) setLoadingProfile(false);
       });
     return () => { mounted = false; };
-  }, [showToast]);
+  }, [showToast, t]);
 
   const topicMetrics = useMemo(() => {
     const sorted = [...(progress?.topicBreakdown || [])].sort((l, r) => r.accuracy - l.accuracy);
@@ -239,16 +241,16 @@ export function ProfilePage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Profile"
-        title={formState.fullName || "Student"}
-        description="Manage account details, learning preferences, saved topics, security controls, and student support information from one place."
-        badge={`${user?.isAdmin ? "Admin" : "Student"} account`}
+        eyebrow={t("profile.eyebrow")}
+        title={formState.fullName || t("common.student")}
+        description={t("profile.description")}
+        badge={t("profile.accountBadge", { role: user?.isAdmin ? t("common.admin") : t("common.student") })}
       />
 
       {error ? (
         <Card>
           <CardContent className="p-4 text-[13px] text-rose-300/90">
-            Profile data could not fully load: {error}
+            {t("profile.profileCouldNotLoad", { error })}
           </CardContent>
         </Card>
       ) : null}
@@ -271,14 +273,14 @@ export function ProfilePage() {
               </div>
               <div className="min-w-0">
                 <p className="text-[10px] font-medium uppercase tracking-[0.26em] text-primary/60">
-                  Profile card
+                  {t("profile.profileCard")}
                 </p>
                 <h2 className="mt-1.5 break-words text-xl font-semibold tracking-tight text-white">
-                  {formState.fullName || "Student"}
+                  {formState.fullName || t("common.student")}
                 </h2>
                 <p className="mt-1 break-words text-[13px] text-slate-500">{user?.email}</p>
                 <div className="mt-3 flex flex-wrap gap-1.5">
-                  <Badge>{user?.isAdmin ? "Admin access" : "Student access"}</Badge>
+                  <Badge>{user?.isAdmin ? t("profile.adminAccess") : t("profile.studentAccess")}</Badge>
                   <Badge variant="secondary">{formState.school || "Rural Community School"}</Badge>
                   <Badge variant="secondary">{formState.language}</Badge>
                 </div>
@@ -288,7 +290,7 @@ export function ProfilePage() {
             {/* Upload */}
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="space-y-2">
-                <span className="text-[13px] font-medium text-slate-400">Upload profile photo</span>
+                <span className="text-[13px] font-medium text-slate-400">{t("profile.uploadPhoto")}</span>
                 <Input accept="image/*" onChange={handleAvatarUpload} type="file" />
               </label>
             </div>
@@ -297,11 +299,11 @@ export function ProfilePage() {
             <div className="flex flex-wrap gap-2.5">
               <Button onClick={handleSaveProfile} disabled={savingProfile}>
                 <Save className="h-3.5 w-3.5" />
-                {savingProfile ? "Saving..." : "Save profile"}
+                {savingProfile ? `${t("common.save")}...` : t("common.saveProfile")}
               </Button>
               <Button onClick={handleDownloadReport} variant="outline">
                 <Download className="h-3.5 w-3.5" />
-                Download report
+                {t("common.downloadReport")}
               </Button>
             </div>
 
@@ -316,32 +318,32 @@ export function ProfilePage() {
         {/* Edit form */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle>Edit profile</CardTitle>
+            <CardTitle>{t("profile.editProfile")}</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3.5 sm:grid-cols-2">
             <label className="space-y-2">
-              <span className="text-[13px] font-medium text-slate-400">Full name</span>
+              <span className="text-[13px] font-medium text-slate-400">{t("profile.fullName")}</span>
               <Input name="fullName" value={formState.fullName} onChange={handleChange} />
             </label>
             <label className="space-y-2">
-              <span className="text-[13px] font-medium text-slate-400">School</span>
+              <span className="text-[13px] font-medium text-slate-400">{t("profile.school")}</span>
               <Input name="school" value={formState.school} onChange={handleChange} />
             </label>
             <label className="space-y-2">
-              <span className="text-[13px] font-medium text-slate-400">Class / Grade</span>
+              <span className="text-[13px] font-medium text-slate-400">{t("profile.classGrade")}</span>
               <Input name="classGrade" value={formState.classGrade} onChange={handleChange} />
             </label>
             <label className="space-y-2">
-              <span className="text-[13px] font-medium text-slate-400">Preferred subject</span>
+              <span className="text-[13px] font-medium text-slate-400">{t("profile.preferredSubject")}</span>
               <Input name="preferredSubject" value={formState.preferredSubject} onChange={handleChange} />
             </label>
             <label className="space-y-2 sm:col-span-2">
-              <span className="text-[13px] font-medium text-slate-400">Learning goal</span>
+              <span className="text-[13px] font-medium text-slate-400">{t("profile.learningGoal")}</span>
               <Textarea
                 name="learningGoal"
                 value={formState.learningGoal}
                 onChange={handleChange}
-                placeholder="Example: Improve algebra problem solving before exams."
+                placeholder={t("profile.learningGoalPlaceholder")}
               />
             </label>
           </CardContent>
@@ -350,39 +352,39 @@ export function ProfilePage() {
 
       {/* ── Stats ── */}
       <section className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard icon={CircleGauge} label="Accuracy" value={formatPercent(progress?.accuracy || 0)} hint="Average score across completed quizzes" />
-        <StatCard icon={BookOpenCheck} label="Completed quizzes" value={progress?.completedQuizzes || 0} hint="Saved practice submissions" />
-        <StatCard icon={Sparkles} label="Current level" value={progress?.currentDifficulty || "Easy"} hint="Adaptive level used by the system" />
-        <StatCard icon={Target} label="Tutor questions" value={studyMetrics.tutorQuestions} hint="Questions asked on the AI Tutor page" />
+        <StatCard icon={CircleGauge} label={t("dashboard.accuracy")} value={formatPercent(progress?.accuracy || 0)} hint={t("dashboard.accuracyHint")} />
+        <StatCard icon={BookOpenCheck} label={t("dashboard.completedQuizzes")} value={progress?.completedQuizzes || 0} hint="Saved practice submissions" />
+        <StatCard icon={Sparkles} label={t("profile.currentLevel")} value={progress?.currentDifficulty || "Easy"} hint={t("profile.currentLevelHint")} />
+        <StatCard icon={Target} label={t("profile.tutorQuestions")} value={studyMetrics.tutorQuestions} hint={t("profile.tutorQuestionsHint")} />
       </section>
 
       {/* ── Preferences + Academic ── */}
       <section className="grid gap-5 xl:grid-cols-2">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle>Learning preferences</CardTitle>
+            <CardTitle>{t("profile.learningPreferences")}</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3.5 sm:grid-cols-2">
             <SelectField
-              label="Preferred language"
+              label={t("profile.preferredLanguage")}
               value={formState.language}
               options={languageOptions}
               onChange={(e) => handleChange({ target: { name: "language", value: e.target.value } })}
             />
             <SelectField
-              label="Explanation style"
+              label={t("profile.explanationStyle")}
               value={formState.explanationStyle}
               options={explanationStyleOptions}
               onChange={(e) => handleChange({ target: { name: "explanationStyle", value: e.target.value } })}
             />
             <SelectField
-              label="Quiz difficulty mode"
+              label={t("profile.quizDifficultyMode")}
               value={formState.quizMode}
               options={quizModeOptions}
               onChange={(e) => handleChange({ target: { name: "quizMode", value: e.target.value } })}
             />
             <label className="space-y-2">
-              <span className="text-[13px] font-medium text-slate-400">Daily study reminder</span>
+              <span className="text-[13px] font-medium text-slate-400">{t("profile.dailyReminder")}</span>
               <Input name="reminderTime" type="time" value={formState.reminderTime} onChange={handleChange} />
             </label>
           </CardContent>
@@ -390,35 +392,35 @@ export function ProfilePage() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle>Academic information</CardTitle>
+            <CardTitle>{t("profile.academicInformation")}</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3.5 sm:grid-cols-2">
             <SelectField
-              label="Age group"
+              label={t("profile.ageGroup")}
               value={formState.ageGroup || ageGroupOptions[0]}
               options={ageGroupOptions}
               onChange={(e) => handleChange({ target: { name: "ageGroup", value: e.target.value } })}
             />
             <label className="space-y-2">
-              <span className="text-[13px] font-medium text-slate-400">Target exam / focus</span>
+              <span className="text-[13px] font-medium text-slate-400">{t("profile.targetExam")}</span>
               <Input name="targetExam" value={formState.targetExam} onChange={handleChange} />
             </label>
             <DetailRow
               icon={GraduationCap}
-              label="Strongest topic"
+              label={t("profile.strongestTopic")}
               value={
                 topicMetrics.strongestTopic
                   ? `${topicMetrics.strongestTopic.topic} (${Math.round(topicMetrics.strongestTopic.accuracy)}%)`
-                  : "Not enough data yet"
+                  : t("profile.notEnoughDataYet")
               }
             />
             <DetailRow
               icon={Target}
-              label="Weakest topic"
+              label={t("profile.weakestTopic")}
               value={
                 topicMetrics.weakestTopic
                   ? `${topicMetrics.weakestTopic.topic} (${Math.round(topicMetrics.weakestTopic.accuracy)}%)`
-                  : "Not enough data yet"
+                  : t("profile.notEnoughDataYet")
               }
             />
           </CardContent>
@@ -429,7 +431,7 @@ export function ProfilePage() {
       <section className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle>Achievements</CardTitle>
+            <CardTitle>{t("profile.achievements")}</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-2.5">
             {achievements.length ? (
@@ -449,7 +451,7 @@ export function ProfilePage() {
               ))
             ) : (
               <div className="rounded-xl border border-dashed border-white/[0.08] p-5 text-[13px] leading-relaxed text-slate-500">
-                Achievements will unlock as the student studies, asks questions, and completes quizzes.
+                {t("profile.achievementsEmpty")}
               </div>
             )}
           </CardContent>
@@ -457,17 +459,17 @@ export function ProfilePage() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle>Study streak</CardTitle>
+            <CardTitle>{t("profile.studyStreak")}</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3 sm:grid-cols-2">
-            <DetailRow icon={Flame} label="Current streak" value={`${studyMetrics.currentStreak} days`} />
-            <DetailRow icon={BadgeCheck} label="Longest streak" value={`${studyMetrics.longestStreak} days`} />
+            <DetailRow icon={Flame} label={t("profile.currentStreak")} value={t("profile.days", { count: studyMetrics.currentStreak })} />
+            <DetailRow icon={BadgeCheck} label={t("profile.longestStreak")} value={t("profile.days", { count: studyMetrics.longestStreak })} />
             <DetailRow
               icon={Clock3}
-              label="Last active"
-              value={studyMetrics.lastActive ? new Date(studyMetrics.lastActive).toLocaleString() : "No activity yet"}
+              label={t("profile.lastActive")}
+              value={studyMetrics.lastActive ? formatDateTime(studyMetrics.lastActive) : t("profile.noActivityYet")}
             />
-            <DetailRow icon={BookOpenCheck} label="Total study sessions" value={`${studyMetrics.totalSessions}`} />
+            <DetailRow icon={BookOpenCheck} label={t("profile.totalStudySessions")} value={t("profile.sessions", { count: studyMetrics.totalSessions })} />
           </CardContent>
         </Card>
       </section>
@@ -476,17 +478,17 @@ export function ProfilePage() {
       <section className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle>Account security</CardTitle>
+            <CardTitle>{t("profile.accountSecurity")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-2">
-              <DetailRow icon={ShieldCheck} label="Account role" value={user?.isAdmin ? "Admin" : "Student"} />
-              <DetailRow icon={LockKeyhole} label="Login method" value={user?.loginMethod || "Email + Password"} />
+              <DetailRow icon={ShieldCheck} label={t("profile.accountRole")} value={user?.isAdmin ? t("common.admin") : t("common.student")} />
+              <DetailRow icon={LockKeyhole} label={t("profile.loginMethod")} value={user?.loginMethod || "Email + Password"} />
             </div>
 
             <div className="grid gap-3.5 sm:grid-cols-3">
               <label className="space-y-2">
-                <span className="text-[13px] font-medium text-slate-400">Current password</span>
+                <span className="text-[13px] font-medium text-slate-400">{t("profile.currentPassword")}</span>
                 <Input
                   type="password"
                   value={passwordForm.currentPassword}
@@ -494,7 +496,7 @@ export function ProfilePage() {
                 />
               </label>
               <label className="space-y-2">
-                <span className="text-[13px] font-medium text-slate-400">New password</span>
+                <span className="text-[13px] font-medium text-slate-400">{t("profile.newPassword")}</span>
                 <Input
                   type="password"
                   value={passwordForm.nextPassword}
@@ -502,7 +504,7 @@ export function ProfilePage() {
                 />
               </label>
               <label className="space-y-2">
-                <span className="text-[13px] font-medium text-slate-400">Confirm password</span>
+                <span className="text-[13px] font-medium text-slate-400">{t("profile.confirmPassword")}</span>
                 <Input
                   type="password"
                   value={passwordForm.confirmPassword}
@@ -514,7 +516,7 @@ export function ProfilePage() {
             <div className="flex flex-wrap gap-2.5">
               <Button onClick={handleChangePassword} disabled={changingPassword}>
                 <LockKeyhole className="h-3.5 w-3.5" />
-                {changingPassword ? "Updating..." : "Change password"}
+                {changingPassword ? t("profile.updating") : t("profile.changePassword")}
               </Button>
               <Button
                 variant="outline"
@@ -524,7 +526,7 @@ export function ProfilePage() {
                 }}
               >
                 <ShieldCheck className="h-3.5 w-3.5" />
-                Sign out all devices
+                {t("profile.signOutAllDevices")}
               </Button>
             </div>
 
@@ -538,18 +540,18 @@ export function ProfilePage() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle>Saved topics</CardTitle>
+            <CardTitle>{t("profile.savedTopics")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex flex-col gap-2.5 sm:flex-row">
               <Input
-                placeholder="Add a topic to revise later"
+                placeholder={t("profile.addTopicPlaceholder")}
                 value={savedTopicInput}
                 onChange={(e) => setSavedTopicInput(e.target.value)}
               />
               <Button type="button" onClick={handleAddSavedTopic}>
                 <Plus className="h-3.5 w-3.5" />
-                Add
+                {t("profile.add")}
               </Button>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -572,7 +574,7 @@ export function ProfilePage() {
                 ))
               ) : (
                 <div className="rounded-xl border border-dashed border-white/[0.08] p-5 text-[13px] leading-relaxed text-slate-500">
-                  No saved topics yet. Add topics the student wants to revise again.
+                  {t("profile.noSavedTopics")}
                 </div>
               )}
             </div>
@@ -584,23 +586,23 @@ export function ProfilePage() {
       <section className="grid gap-5 xl:grid-cols-2">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle>Parent / teacher contact</CardTitle>
+            <CardTitle>{t("profile.parentTeacherContact")}</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3.5 sm:grid-cols-2">
             <label className="space-y-2">
-              <span className="text-[13px] font-medium text-slate-400">Guardian name</span>
+              <span className="text-[13px] font-medium text-slate-400">{t("profile.guardianName")}</span>
               <Input name="guardianName" value={formState.guardianName} onChange={handleChange} />
             </label>
             <label className="space-y-2">
-              <span className="text-[13px] font-medium text-slate-400">Teacher name</span>
+              <span className="text-[13px] font-medium text-slate-400">{t("profile.teacherName")}</span>
               <Input name="teacherName" value={formState.teacherName} onChange={handleChange} />
             </label>
             <label className="space-y-2">
-              <span className="text-[13px] font-medium text-slate-400">School contact</span>
+              <span className="text-[13px] font-medium text-slate-400">{t("profile.schoolContact")}</span>
               <Input name="schoolContact" value={formState.schoolContact} onChange={handleChange} />
             </label>
             <label className="space-y-2">
-              <span className="text-[13px] font-medium text-slate-400">Emergency support contact</span>
+              <span className="text-[13px] font-medium text-slate-400">{t("profile.emergencySupportContact")}</span>
               <Input name="emergencyContact" value={formState.emergencyContact} onChange={handleChange} />
             </label>
           </CardContent>
@@ -608,13 +610,13 @@ export function ProfilePage() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle>Profile overview</CardTitle>
+            <CardTitle>{t("profile.profileOverview")}</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3">
-            <DetailRow icon={UserRound} label="Full name" value={formState.fullName} />
-            <DetailRow icon={Mail} label="Email" value={user?.email || "Not available"} />
-            <DetailRow icon={Languages} label="Language mode" value={formState.language} />
-            <DetailRow icon={BellRing} label="Daily reminder" value={formState.reminderTime || "Not set"} />
+            <DetailRow icon={UserRound} label={t("profile.fullName")} value={formState.fullName} />
+            <DetailRow icon={Mail} label={t("profile.email")} value={user?.email || t("profile.notAvailable")} />
+            <DetailRow icon={Languages} label={t("profile.languageMode")} value={formState.language} />
+            <DetailRow icon={BellRing} label={t("profile.dailyReminder")} value={formState.reminderTime || t("profile.notSet")} />
           </CardContent>
         </Card>
       </section>

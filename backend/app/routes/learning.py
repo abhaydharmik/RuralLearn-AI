@@ -3,7 +3,15 @@ from fastapi import APIRouter, Depends, status
 from app.auth import AuthenticatedUser, get_current_user, require_admin
 from app.dependencies import get_learning_service
 from app.models import (
+    AIUsageResponse,
     AdminDashboardResponse,
+    AdminPermissionsResponse,
+    AdminSettingsResponse,
+    AdminSettingsUpdateRequest,
+    AdminUserRecord,
+    AdminUserUpdateRequest,
+    AdminUsersResponse,
+    AuditLogsResponse,
     ChatMessage,
     ChatRequest,
     ChatResponse,
@@ -13,6 +21,8 @@ from app.models import (
     QuizResponse,
     QuizSubmissionRequest,
     QuizSubmissionResponse,
+    ReportExportRequest,
+    ReportExportResponse,
     RevisionRequest,
     RevisionResponse,
 )
@@ -104,3 +114,84 @@ async def get_admin_dashboard(
     service: LearningService = Depends(get_learning_service),
 ) -> AdminDashboardResponse:
     return await service.get_admin_dashboard()
+
+
+@router.get("/admin/users", response_model=AdminUsersResponse, status_code=status.HTTP_200_OK)
+async def get_admin_users(
+    _current_user: AuthenticatedUser = Depends(require_admin),
+    service: LearningService = Depends(get_learning_service),
+) -> AdminUsersResponse:
+    return await service.get_admin_users()
+
+
+@router.patch("/admin/users/{user_id}", response_model=AdminUserRecord, status_code=status.HTTP_200_OK)
+async def update_admin_user(
+    user_id: str,
+    payload: AdminUserUpdateRequest,
+    current_user: AuthenticatedUser = Depends(require_admin),
+    service: LearningService = Depends(get_learning_service),
+) -> AdminUserRecord:
+    return await service.update_admin_user(
+        user_id=user_id,
+        payload=payload,
+        actor_user_id=current_user.id,
+        actor_email=current_user.email,
+    )
+
+
+@router.get("/admin/permissions", response_model=AdminPermissionsResponse, status_code=status.HTTP_200_OK)
+async def get_admin_permissions(
+    _current_user: AuthenticatedUser = Depends(require_admin),
+    service: LearningService = Depends(get_learning_service),
+) -> AdminPermissionsResponse:
+    return await service.get_admin_permissions()
+
+
+@router.get("/admin/logs", response_model=AuditLogsResponse, status_code=status.HTTP_200_OK)
+async def get_admin_logs(
+    _current_user: AuthenticatedUser = Depends(require_admin),
+    service: LearningService = Depends(get_learning_service),
+) -> AuditLogsResponse:
+    return await service.get_admin_logs()
+
+
+@router.get("/admin/settings", response_model=AdminSettingsResponse, status_code=status.HTTP_200_OK)
+async def get_admin_settings(
+    _current_user: AuthenticatedUser = Depends(require_admin),
+    service: LearningService = Depends(get_learning_service),
+) -> AdminSettingsResponse:
+    return await service.get_admin_settings()
+
+
+@router.patch("/admin/settings", response_model=AdminSettingsResponse, status_code=status.HTTP_200_OK)
+async def update_admin_settings(
+    payload: AdminSettingsUpdateRequest,
+    current_user: AuthenticatedUser = Depends(require_admin),
+    service: LearningService = Depends(get_learning_service),
+) -> AdminSettingsResponse:
+    return await service.update_admin_settings(
+        payload=payload,
+        actor_user_id=current_user.id,
+        actor_email=current_user.email,
+    )
+
+
+@router.get("/admin/ai-usage", response_model=AIUsageResponse, status_code=status.HTTP_200_OK)
+async def get_admin_ai_usage(
+    _current_user: AuthenticatedUser = Depends(require_admin),
+    service: LearningService = Depends(get_learning_service),
+) -> AIUsageResponse:
+    return await service.get_admin_ai_usage()
+
+
+@router.post("/admin/reports/export", response_model=ReportExportResponse, status_code=status.HTTP_200_OK)
+async def export_admin_report(
+    payload: ReportExportRequest,
+    current_user: AuthenticatedUser = Depends(require_admin),
+    service: LearningService = Depends(get_learning_service),
+) -> ReportExportResponse:
+    return await service.export_admin_report(
+        payload=payload,
+        actor_user_id=current_user.id,
+        actor_email=current_user.email,
+    )

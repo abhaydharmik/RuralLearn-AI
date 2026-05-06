@@ -8,6 +8,7 @@ class ChatRequest(APIModel):
     question: str = Field(..., min_length=2, max_length=500)
     difficulty: DifficultyLevel | None = None
     user_id: str | None = Field(default=None, alias="userId")
+    language: str | None = Field(default=None, max_length=40)
 
 
 class ChatResponse(APIModel):

@@ -27,11 +27,13 @@ class TutorAIService:
         self,
         question: str,
         difficulty: DifficultyLevel,
+        language: str | None = None,
     ) -> tuple[str, str]:
+        language_name = self._normalize_language(language)
         if not self.client:
-            return self._mock_explanation(question, difficulty), "mock"
+            return self._mock_explanation(question, difficulty, language_name), "mock"
 
-        prompt = TUTOR_PROMPT.format(topic=question)
+        prompt = TUTOR_PROMPT.format(topic=question, language=language_name)
         try:
             answer = await self._chat_completion(
                 [
@@ -39,28 +41,31 @@ class TutorAIService:
                         "role": "system",
                         "content": (
                             "You are a kind AI tutor for rural beginner students. "
-                            "Keep answers short, simple, practical, and encouraging."
+                            "Keep answers short, simple, practical, and encouraging. "
+                            f"Always answer in {language_name}."
                         ),
                     },
                     {"role": "user", "content": prompt},
                 ],
                 max_tokens=180,
             )
-            return answer or self._mock_explanation(question, difficulty), "groq"
+            return answer or self._mock_explanation(question, difficulty, language_name), "groq"
         except Exception:
-            return self._mock_explanation(question, difficulty), "mock"
+            return self._mock_explanation(question, difficulty, language_name), "mock"
 
     async def generate_quiz(
         self,
         topic: str,
         difficulty: DifficultyLevel,
+        language: str | None = None,
     ) -> tuple[list[QuizQuestion], str]:
+        language_name = self._normalize_language(language)
         if not self.client:
             return self._mock_quiz(topic, difficulty), "mock"
 
         difficulty = self._normalize_difficulty(difficulty)
         prompt = (
-            QUIZ_PROMPT.format(topic=topic, difficulty=difficulty.value)
+            QUIZ_PROMPT.format(topic=topic, difficulty=difficulty.value, language=language_name)
             + "\nEach correctAnswer must be the exact full text of one option."
             + "\nReturn exactly 5 questions and no extra text."
         )
@@ -71,7 +76,8 @@ class TutorAIService:
                         "role": "system",
                         "content": (
                             "Return only valid JSON. Do not include markdown, notes, "
-                            "or text outside the JSON object."
+                            "or text outside the JSON object. "
+                            f"Write all learner-facing text in {language_name}."
                         ),
                     },
                     {"role": "user", "content": prompt},
@@ -90,11 +96,13 @@ class TutorAIService:
         topic: str,
         score: float,
         difficulty: DifficultyLevel,
+        language: str | None = None,
     ) -> tuple[str, str]:
+        language_name = self._normalize_language(language)
         if not self.client:
-            return self._mock_feedback(score), "mock"
+            return self._mock_feedback(score, language_name), "mock"
 
-        prompt = FEEDBACK_PROMPT.format(topic=topic, score=score)
+        prompt = FEEDBACK_PROMPT.format(topic=topic, score=score, language=language_name)
         try:
             feedback = await self._chat_completion(
                 [
@@ -102,7 +110,8 @@ class TutorAIService:
                         "role": "system",
                         "content": (
                             "Give supportive, practical feedback in under 60 words. "
-                            "Avoid long lectures."
+                            "Avoid long lectures. "
+                            f"Answer in {language_name}."
                         ),
                     },
                     {
@@ -112,24 +121,27 @@ class TutorAIService:
                 ],
                 max_tokens=140,
             )
-            return feedback or self._mock_feedback(score), "groq"
+            return feedback or self._mock_feedback(score, language_name), "groq"
         except Exception:
-            return self._mock_feedback(score), "mock"
+            return self._mock_feedback(score, language_name), "mock"
 
     async def generate_revision(
         self,
         topic: str,
         difficulty: DifficultyLevel,
+        language: str | None = None,
     ) -> RevisionResponse:
         difficulty = self._normalize_difficulty(difficulty)
+        language_name = self._normalize_language(language)
         if not self.client:
-            return self._mock_revision(topic, difficulty, "mock")
+            return self._mock_revision(topic, difficulty, "mock", language_name)
 
         prompt = f"""
 Create a short revision plan for a beginner rural student.
 
 Topic: {topic}
 Difficulty: {difficulty.value}
+Language: {language_name}
 
 Return only JSON with this exact shape:
 {{
@@ -147,7 +159,10 @@ Return only JSON with this exact shape:
                 [
                     {
                         "role": "system",
-                        "content": "Return valid JSON only. Keep language simple and practical.",
+                        "content": (
+                            "Return valid JSON only. Keep language simple and practical. "
+                            f"Write every learner-facing field in {language_name}."
+                        ),
                     },
                     {"role": "user", "content": prompt},
                 ],
@@ -170,7 +185,7 @@ Return only JSON with this exact shape:
             ][:3]
 
             if not summary or len(practice_questions) < 3:
-                return self._mock_revision(topic, difficulty, "mock")
+                return self._mock_revision(topic, difficulty, "mock", language_name)
 
             return RevisionResponse(
                 topic=topic,
@@ -181,7 +196,7 @@ Return only JSON with this exact shape:
                 source="groq",
             )
         except Exception:
-            return self._mock_revision(topic, difficulty, "mock")
+            return self._mock_revision(topic, difficulty, "mock", language_name)
 
     async def _chat_completion(self, messages: list[dict], max_tokens: int) -> str:
         response = await asyncio.to_thread(
@@ -256,20 +271,42 @@ Return only JSON with this exact shape:
         except json.JSONDecodeError:
             return {}
 
-    def _mock_explanation(self, question: str, difficulty: DifficultyLevel) -> str:
+    def _mock_explanation(self, question: str, difficulty: DifficultyLevel, language: str) -> str:
         difficulty = self._normalize_difficulty(difficulty)
         level_hint = {
             DifficultyLevel.easy: "simple words",
             DifficultyLevel.medium: "a small example",
             DifficultyLevel.hard: "one deeper idea",
         }[difficulty]
+        if language == "Hindi":
+            return (
+                f"{question} को हम छोटे-छोटे कदमों में समझते हैं। "
+                f"{level_hint} के साथ शुरू करें, एक उदाहरण देखें और फिर एक छोटा प्रश्न हल करें।"
+            )
+        if language == "Marathi":
+            return (
+                f"{question} आपण टप्प्याटप्प्याने समजतो. "
+                f"{level_hint} पासून सुरुवात करा, एक उदाहरण पाहा आणि मग एक छोटा प्रश्न सोडवा."
+            )
         return (
             f"{question} means we understand the idea step by step. "
             f"Think of it using {level_hint}: start with what you know, "
             "look at one example, then practice one small question."
         )
 
-    def _mock_feedback(self, score: float) -> str:
+    def _mock_feedback(self, score: float, language: str) -> str:
+        if language == "Hindi":
+            if score < 50:
+                return "अच्छी शुरुआत है। मूल विचार दोबारा पढ़ें और फिर आसान क्विज़ आज़माएँ।"
+            if score <= 80:
+                return "अच्छी प्रगति है। छूटे हुए प्रश्न दोहराएँ और फिर मध्यम क्विज़ करें।"
+            return "बहुत बढ़िया। अब आप थोड़ा कठिन क्विज़ करने के लिए तैयार हैं।"
+        if language == "Marathi":
+            if score < 50:
+                return "छान सुरुवात आहे. मूलभूत कल्पना पुन्हा पाहा आणि सोपी क्विझ करून पाहा."
+            if score <= 80:
+                return "चांगली प्रगती आहे. चुकलेले प्रश्न पुन्हा पाहा आणि मध्यम क्विझ करा."
+            return "उत्तम काम. आता तुम्ही थोडी कठीण क्विझसाठी तयार आहात."
         if score < 50:
             return "Good start. Review the basic idea, then try an easier practice quiz."
         if score <= 80:
@@ -281,20 +318,67 @@ Return only JSON with this exact shape:
         topic: str,
         difficulty: DifficultyLevel,
         source: str,
+        language: str,
     ) -> RevisionResponse:
-        return RevisionResponse(
-            topic=topic,
-            difficulty=difficulty,
-            summary=(
+        if language == "Hindi":
+            summary = (
+                f"{topic} को पहले सरल अर्थ से शुरू करें, फिर उसे एक दैनिक उदाहरण से जोड़ें। "
+                "मुख्य विचार अपने शब्दों में लिखें। छोटे प्रश्नों से अभ्यास करें। "
+                "फिर सुधार देखने के लिए क्विज़ दोबारा करें।"
+            )
+            examples = [
+                f"उदाहरण: {topic} को छोटे छात्र को आसान शब्दों में समझाइए।",
+                f"उदाहरण: {topic} का एक छोटा प्रश्न हल कीजिए और हर कदम बोलिए।",
+            ]
+            questions = [
+                RevisionPracticeQuestion(
+                    question=f"{topic} का मुख्य विचार क्या है?",
+                    answer=f"मुख्य विचार {topic} का सरल अर्थ या मूल नियम है।",
+                ),
+                RevisionPracticeQuestion(
+                    question=f"जब {topic} कठिन लगे तो क्या करें?",
+                    answer="इसे छोटे कदमों में बांटें और एक-एक उदाहरण का अभ्यास करें।",
+                ),
+                RevisionPracticeQuestion(
+                    question=f"{topic} को बेहतर याद कैसे रखें?",
+                    answer="व्याख्या दोहराएँ और एक छोटा क्विज़ फिर से करें।",
+                ),
+            ]
+        elif language == "Marathi":
+            summary = (
+                f"{topic} ची सुरुवात सोप्या अर्थापासून करा आणि मग ते एका दैनंदिन उदाहरणाशी जोडा. "
+                "मुख्य कल्पना स्वतःच्या शब्दांत लिहा. लहान प्रश्नांपासून सराव करा. "
+                "नंतर सुधारणा पाहण्यासाठी क्विझ पुन्हा करा."
+            )
+            examples = [
+                f"उदाहरण: {topic} लहान विद्यार्थ्याला सोप्या शब्दांत समजावून सांगा.",
+                f"उदाहरण: {topic} वर एक छोटा प्रश्न सोडवा आणि प्रत्येक टप्पा मोठ्याने सांगा.",
+            ]
+            questions = [
+                RevisionPracticeQuestion(
+                    question=f"{topic} ची मुख्य कल्पना काय आहे?",
+                    answer=f"मुख्य कल्पना म्हणजे {topic} चा सोपा अर्थ किंवा मूलभूत नियम.",
+                ),
+                RevisionPracticeQuestion(
+                    question=f"{topic} अवघड वाटल्यास काय करावे?",
+                    answer="ते छोट्या टप्प्यांत विभागा आणि एकावेळी एक उदाहरण सराव करा.",
+                ),
+                RevisionPracticeQuestion(
+                    question=f"{topic} अधिक चांगले लक्षात कसे राहील?",
+                    answer="स्पष्टीकरण पुन्हा वाचा आणि एक छोटी क्विझ पुन्हा सोडवा.",
+                ),
+            ]
+        else:
+            summary = (
                 f"Start {topic} with the basic meaning, then connect it to one real-life example. "
                 "Write the key idea in your own words. Practice small questions first. "
                 "After that, try one quiz again to check improvement."
-            ),
-            examples=[
+            )
+            examples = [
                 f"Example: explain {topic} to a younger student using simple words.",
                 f"Example: solve one small {topic} question and say each step aloud.",
-            ],
-            practiceQuestions=[
+            ]
+            questions = [
                 RevisionPracticeQuestion(
                     question=f"What is the main idea of {topic}?",
                     answer=f"The main idea is the simple meaning or basic rule of {topic}.",
@@ -307,7 +391,13 @@ Return only JSON with this exact shape:
                     question=f"How can you remember {topic} better?",
                     answer="Revise the explanation and try a short practice quiz.",
                 ),
-            ],
+            ]
+        return RevisionResponse(
+            topic=topic,
+            difficulty=difficulty,
+            summary=summary,
+            examples=examples,
+            practiceQuestions=questions,
             source=source,
         )
 
@@ -385,3 +475,11 @@ Return only JSON with this exact shape:
 
     def _difficulty_value(self, value: DifficultyLevel | str | None) -> str:
         return self._normalize_difficulty(value).value
+
+    def _normalize_language(self, language: str | None) -> str:
+        normalized = str(language or "English").strip().lower()
+        if normalized in {"hindi", "hi"}:
+            return "Hindi"
+        if normalized in {"marathi", "mr"}:
+            return "Marathi"
+        return "English"

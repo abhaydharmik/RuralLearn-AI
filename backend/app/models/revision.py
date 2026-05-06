@@ -6,6 +6,7 @@ from app.models.quiz import DifficultyLevel
 
 class RevisionRequest(APIModel):
     topic: str | None = Field(default=None, max_length=120)
+    language: str | None = Field(default=None, max_length=40)
 
 
 class RevisionPracticeQuestion(APIModel):

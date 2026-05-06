@@ -15,32 +15,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
+import { useI18n } from "@/context/I18nContext";
 import { useToast } from "@/context/ToastContext";
 import { hasSupabaseConfig } from "@/lib/supabase";
 import { isPasswordRecoveryRoute } from "@/services/authService";
-
-const highlights = [
-  {
-    icon: BrainCircuit,
-    title: "AI tutor support",
-    description: "Explain difficult ideas in simple language with beginner-friendly examples.",
-  },
-  {
-    icon: BookOpenCheck,
-    title: "Smart quizzes",
-    description: "Generate topic-based MCQs and get instant feedback after submission.",
-  },
-  {
-    icon: ChartNoAxesCombined,
-    title: "Progress tracking",
-    description: "Watch accuracy improve with clean charts and weak-topic alerts.",
-  },
-];
 
 export function AuthPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { completePasswordRecovery, login, requestPasswordReset, signup, user } = useAuth();
+  const { t } = useI18n();
   const { showToast } = useToast();
   const [mode, setMode] = useState("login");
   const [formState, setFormState] = useState({
@@ -63,20 +47,37 @@ export function AuthPage() {
   const isRecoveryMode = useMemo(() => isPasswordRecoveryRoute(location), [location]);
   const recoveryReady = hasSupabaseConfig && Boolean(user);
   const recoveryBlockedMessage = !hasSupabaseConfig
-    ? "Password recovery requires Supabase authentication to be configured for this project."
-    : "This recovery link is missing or expired. Request a new password reset email from the login form.";
-  const trustPoints = [
+    ? t("auth.recoveryUnavailable")
+    : t("auth.recoveryExpired");
+  const highlights = [
     {
-      icon: ShieldCheck,
-      label: "Secure authentication",
+      icon: BrainCircuit,
+      title: t("auth.highlightTutorTitle"),
+      description: t("auth.highlightTutorDescription"),
     },
     {
       icon: BookOpenCheck,
-      label: "Progress saved automatically",
+      title: t("auth.highlightQuizTitle"),
+      description: t("auth.highlightQuizDescription"),
+    },
+    {
+      icon: ChartNoAxesCombined,
+      title: t("auth.highlightAnalyticsTitle"),
+      description: t("auth.highlightAnalyticsDescription"),
+    },
+  ];
+  const trustPoints = [
+    {
+      icon: ShieldCheck,
+      label: t("auth.secureAuthentication"),
+    },
+    {
+      icon: BookOpenCheck,
+      label: t("auth.progressSavedAutomatically"),
     },
     {
       icon: Wifi,
-      label: "Low-bandwidth friendly",
+      label: t("auth.lowBandwidthFriendly"),
     },
   ];
 
@@ -196,15 +197,15 @@ export function AuthPage() {
         <section className="animated-enter space-y-6 sm:space-y-8">
           <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-xs text-primary sm:text-sm">
             <span className="h-2 w-2 rounded-full bg-primary shadow-[0_0_18px_rgba(16,185,129,0.75)]" />
-            SDG 4 Learning Platform
+            {t("auth.sdgBadge")}
           </div>
 
           <div className="space-y-4 sm:space-y-5">
             <h1 className="max-w-3xl text-4xl font-bold leading-tight text-white sm:text-5xl md:text-6xl">
-              Personalized AI learning that feels simple, supportive, and effective.
+              {t("auth.heroTitle")}
             </h1>
             <p className="max-w-2xl text-base leading-7 text-slate-300 sm:text-lg sm:leading-8">
-              RuralLearn AI combines tutoring, quizzes, revision support, and progress tracking in one focused learning workspace.
+              {t("auth.heroDescription")}
             </p>
           </div>
 
@@ -230,9 +231,9 @@ export function AuthPage() {
             <div className="border-b border-white/10 bg-white/[0.045] p-4 sm:p-6">
               {isRecoveryMode ? (
                 <div className="rounded-[20px] border border-primary/20 bg-primary/10 px-4 py-3">
-                  <p className="text-sm font-medium text-primary">Password recovery</p>
+                  <p className="text-sm font-medium text-primary">{t("auth.passwordRecovery")}</p>
                   <p className="mt-1 text-sm text-slate-300">
-                    Create a new password to restore access to your learning workspace.
+                    {t("auth.recoveryDescription")}
                   </p>
                 </div>
               ) : (
@@ -249,7 +250,7 @@ export function AuthPage() {
                       !isSignup ? "text-slate-950" : "text-slate-300 hover:text-white"
                     }`}
                   >
-                    Log in
+                    {t("auth.login")}
                   </button>
                   <button
                     type="button"
@@ -258,7 +259,7 @@ export function AuthPage() {
                       isSignup ? "text-slate-950" : "text-slate-300 hover:text-white"
                     }`}
                   >
-                    Sign up
+                    {t("auth.signup")}
                   </button>
                 </div>
               )}
@@ -267,21 +268,21 @@ export function AuthPage() {
             <form className="space-y-5 p-4 sm:p-6" onSubmit={isRecoveryMode ? handlePasswordRecovery : handleSubmit}>
               <div>
                 <p className="text-sm uppercase tracking-[0.25em] text-primary/70">
-                  {isRecoveryMode ? "Reset password" : isSignup ? "Create account" : "Welcome back"}
+                  {isRecoveryMode ? t("auth.resetPassword") : isSignup ? t("auth.createAccount") : t("auth.welcomeBack")}
                 </p>
                 <h2 className="mt-2 text-2xl font-semibold text-white">
                   {isRecoveryMode
-                    ? "Set a new password"
+                    ? t("auth.setNewPassword")
                     : isSignup
-                      ? "Start the learning journey"
-                      : "Continue learning"}
+                      ? t("auth.startLearningJourney")
+                      : t("auth.continueLearning")}
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-slate-400">
                   {isRecoveryMode
-                    ? "Choose a secure new password, then return to your learning dashboard."
+                    ? t("auth.resetLead")
                     : isSignup
-                      ? "Create a student account to save quizzes, revision plans, and learning analytics."
-                      : "Sign in to continue with your tutor, quizzes, revision mode, and dashboards."}
+                      ? t("auth.signupLead")
+                      : t("auth.loginLead")}
                 </p>
               </div>
 
@@ -293,12 +294,12 @@ export function AuthPage() {
                     </div>
                   ) : null}
                   <div className="space-y-2">
-                    <label className="text-sm text-slate-300">New password</label>
+                    <label className="text-sm text-slate-300">{t("auth.newPassword")}</label>
                     <div className="relative">
                       <Input
                         name="nextPassword"
                         type={showPassword ? "text" : "password"}
-                        placeholder="Create a new password"
+                        placeholder={t("auth.createNewPassword")}
                         value={recoveryForm.nextPassword}
                         onChange={handleRecoveryChange}
                         className="pr-14"
@@ -308,18 +309,18 @@ export function AuthPage() {
                         type="button"
                         onClick={() => setShowPassword((current) => !current)}
                         className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-slate-400 transition hover:text-white"
-                        aria-label={showPassword ? "Hide password" : "Show password"}
+                        aria-label={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
                       >
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm text-slate-300">Confirm new password</label>
+                    <label className="text-sm text-slate-300">{t("auth.confirmNewPassword")}</label>
                     <Input
                       name="confirmPassword"
                       type={showPassword ? "text" : "password"}
-                      placeholder="Confirm the new password"
+                      placeholder={t("auth.confirmPasswordPlaceholder")}
                       value={recoveryForm.confirmPassword}
                       onChange={handleRecoveryChange}
                       required
@@ -329,20 +330,20 @@ export function AuthPage() {
               ) : isSignup ? (
                 <>
                   <div className="space-y-2">
-                    <label className="text-sm text-slate-300">Full name</label>
+                    <label className="text-sm text-slate-300">{t("auth.fullName")}</label>
                     <Input
                       name="fullName"
-                      placeholder="Angat Kumar"
+                      placeholder={t("auth.fullNamePlaceholder")}
                       value={formState.fullName}
                       onChange={handleChange}
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm text-slate-300">School</label>
+                    <label className="text-sm text-slate-300">{t("auth.school")}</label>
                     <Input
                       name="school"
-                      placeholder="Village Public School"
+                      placeholder={t("auth.schoolPlaceholder")}
                       value={formState.school}
                       onChange={handleChange}
                       required
@@ -354,11 +355,11 @@ export function AuthPage() {
               {!isRecoveryMode ? (
                 <>
                   <div className="space-y-2">
-                    <label className="text-sm text-slate-300">Email</label>
+                    <label className="text-sm text-slate-300">{t("auth.email")}</label>
                     <Input
                       name="email"
                       type="email"
-                      placeholder="student@example.com"
+                      placeholder={t("auth.emailPlaceholder")}
                       value={formState.email}
                       onChange={handleChange}
                       required
@@ -366,12 +367,12 @@ export function AuthPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm text-slate-300">Password</label>
+                    <label className="text-sm text-slate-300">{t("auth.password")}</label>
                     <div className="relative">
                       <Input
                         name="password"
                         type={showPassword ? "text" : "password"}
-                        placeholder="Enter password"
+                        placeholder={t("auth.passwordPlaceholder")}
                         value={formState.password}
                         onChange={handleChange}
                         className="pr-14"
@@ -381,7 +382,7 @@ export function AuthPage() {
                         type="button"
                         onClick={() => setShowPassword((current) => !current)}
                         className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-slate-400 transition hover:text-white"
-                        aria-label={showPassword ? "Hide password" : "Show password"}
+                        aria-label={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
                       >
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
@@ -404,7 +405,7 @@ export function AuthPage() {
                     disabled={sendingReset}
                     className="text-sm text-slate-400 transition hover:text-white disabled:opacity-50"
                   >
-                    {sendingReset ? "Sending reset link..." : "Forgot password?"}
+                    {sendingReset ? t("auth.sendingResetLink") : t("auth.forgotPassword")}
                   </button>
                 </div>
               ) : null}
@@ -419,13 +420,13 @@ export function AuthPage() {
               >
                 {isRecoveryMode
                   ? completingRecovery
-                    ? "Updating password..."
-                    : "Save new password"
+                    ? t("auth.updatingPassword")
+                    : t("auth.saveNewPassword")
                   : submitting
-                    ? "Please wait..."
+                    ? t("auth.pleaseWait")
                     : isSignup
-                      ? "Create account"
-                      : "Log in"}
+                      ? t("auth.createAccount")
+                      : t("auth.login")}
                 <ArrowRight className="h-4 w-4" />
               </Button>
 

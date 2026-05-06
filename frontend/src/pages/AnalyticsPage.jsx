@@ -11,11 +11,13 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnalyticsSkeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/AuthContext";
+import { useI18n } from "@/context/I18nContext";
 import { useToast } from "@/context/ToastContext";
 import { fetchProgress } from "@/services/learningService";
 
 export function AnalyticsPage() {
   const { user } = useAuth();
+  const { t, formatDate } = useI18n();
   const { showToast } = useToast();
   const [progress, setProgress] = useState(null);
   const [error, setError] = useState("");
@@ -27,15 +29,15 @@ export function AnalyticsPage() {
       .then(setProgress)
       .catch((fetchError) => {
         setError(fetchError.message);
-        showToast({ title: "Analytics unavailable", description: fetchError.message, variant: "error" });
+        showToast({ title: t("analytics.analyticsUnavailable"), description: fetchError.message, variant: "error" });
       });
-  }, [showToast, user?.id]);
+  }, [showToast, t, user?.id]);
 
   if (error) {
     return (
-      <Card>
+        <Card>
         <CardContent className="p-4 text-[13px] text-rose-300/90">
-          Analytics data could not load: {error}
+          {t("analytics.analyticsCouldNotLoad", { error })}
         </CardContent>
       </Card>
     );
@@ -48,10 +50,10 @@ export function AnalyticsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Analytics"
-        title="Learning performance insights"
-        description="A deeper look at quiz accuracy, topic-level mastery, and the areas where the student needs extra support."
-        badge={`${progress.completedQuizzes} quizzes analyzed`}
+        eyebrow={t("analytics.eyebrow")}
+        title={t("analytics.title")}
+        description={t("analytics.description")}
+        badge={t("analytics.quizzesAnalyzed", { count: progress.completedQuizzes })}
       />
 
       <section className="grid gap-5 xl:grid-cols-2">
@@ -69,7 +71,7 @@ export function AnalyticsPage() {
         {/* Weak topic watchlist */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle>Weak topic watchlist</CardTitle>
+            <CardTitle>{t("analytics.weakTopicWatchlist")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             {hasResults ? (
@@ -81,17 +83,17 @@ export function AnalyticsPage() {
                   <div className="min-w-0">
                     <p className="text-[13px] font-semibold text-white">{topic}</p>
                     <p className="mt-0.5 text-[11px] text-slate-500">
-                      Add guided tutoring prompts and one short revision quiz.
+                      {t("analytics.weakTopicHint")}
                     </p>
                   </div>
                   <Badge className="flex-shrink-0 self-start sm:self-center" variant={index === 0 ? "warning" : "secondary"}>
-                    {index === 0 ? "Priority" : "Review"}
+                    {index === 0 ? t("analytics.priority") : t("analytics.review")}
                   </Badge>
                 </div>
               ))
             ) : (
               <div className="rounded-xl border border-dashed border-white/[0.08] p-5 text-[13px] leading-relaxed text-slate-500">
-                No weak-topic data yet. Analytics will become personalized after the first submission.
+                {t("analytics.noWeakData")}
               </div>
             )}
           </CardContent>
@@ -100,7 +102,7 @@ export function AnalyticsPage() {
         {/* Recent submissions */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle>Recent submissions</CardTitle>
+            <CardTitle>{t("analytics.recentSubmissions")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             {progress.recentResults.length ? (
@@ -112,13 +114,11 @@ export function AnalyticsPage() {
                   <div className="min-w-0">
                     <p className="text-[13px] font-semibold text-white">{entry.topic}</p>
                     <p className="mt-0.5 text-[11px] text-slate-500">
-                      {new Date(entry.submittedAt).toLocaleDateString(undefined, {
-                        day: "numeric", month: "short", year: "numeric",
-                      })}
+                      {formatDate(entry.submittedAt)}
                     </p>
                   </div>
                   <Badge className="self-start md:self-center" variant="secondary">
-                    {entry.correctAnswers} correct
+                    {t("analytics.correctCount", { count: entry.correctAnswers })}
                   </Badge>
                   <Badge
                     className="self-start md:self-center"
@@ -130,7 +130,7 @@ export function AnalyticsPage() {
               ))
             ) : (
               <div className="rounded-xl border border-dashed border-white/[0.08] p-5 text-[13px] leading-relaxed text-slate-500">
-                No submissions yet. Run a few quizzes to unlock full analytics.
+                {t("analytics.noSubmissions")}
               </div>
             )}
           </CardContent>

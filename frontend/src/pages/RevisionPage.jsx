@@ -8,11 +8,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { DetailPageSkeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/AuthContext";
+import { useI18n } from "@/context/I18nContext";
 import { useToast } from "@/context/ToastContext";
 import { fetchProgress, fetchRevision } from "@/services/learningService";
 
 export function RevisionPage() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const { showToast } = useToast();
   const [topic, setTopic] = useState("");
   const [weakTopics, setWeakTopics] = useState([]);
@@ -29,25 +31,25 @@ export function RevisionPage() {
         setWeakTopics(progress.weakTopics || []);
         const firstTopic = progress.weakTopics?.[0] || "";
         setTopic(firstTopic);
-        return fetchRevision(firstTopic);
+        return fetchRevision(firstTopic, user?.language || "English");
       })
       .then(setRevision)
       .catch((fetchError) => {
         setError(fetchError.message);
-        showToast({ title: "Revision unavailable", description: fetchError.message, variant: "error" });
+        showToast({ title: t("revision.revisionUnavailable"), description: fetchError.message, variant: "error" });
       })
       .finally(() => setBootstrapping(false));
-  }, [showToast, user?.id]);
+  }, [showToast, t, user?.id, user?.language]);
 
   const handleGenerate = async () => {
     setLoading(true);
     setError("");
     try {
-      const response = await fetchRevision(topic.trim());
+      const response = await fetchRevision(topic.trim(), user?.language || "English");
       setRevision(response);
     } catch (revisionError) {
       setError(revisionError.message);
-      showToast({ title: "Revision generation failed", description: revisionError.message, variant: "error" });
+      showToast({ title: t("revision.revisionFailed"), description: revisionError.message, variant: "error" });
     } finally {
       setLoading(false);
     }
@@ -58,21 +60,21 @@ export function RevisionPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Revision Mode"
-        title="Repair weak topics with guided practice"
-        description="The system selects weak areas from quiz performance, creates simple notes, and gives short practice questions."
-        badge={revision ? `Source: ${revision.source}` : "Personalized"}
+        eyebrow={t("revision.eyebrow")}
+        title={t("revision.title")}
+        description={t("revision.description")}
+        badge={revision ? t("revision.badgeSource", { source: revision.source }) : t("common.personalized")}
       />
 
       {/* ── Topic input ── */}
       <Card>
         <CardContent className="grid gap-4 p-4 sm:p-5 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="space-y-2">
-            <label className="text-[13px] font-medium text-slate-400">Topic to revise</label>
+            <label className="text-[13px] font-medium text-slate-400">{t("revision.topicToRevise")}</label>
             <Input
               value={topic}
               onChange={(event) => setTopic(event.target.value)}
-              placeholder="Use a weak topic or type any topic"
+              placeholder={t("revision.topicPlaceholder")}
             />
           </div>
           <Button className="w-full lg:w-auto" onClick={handleGenerate} disabled={loading}>
@@ -81,7 +83,7 @@ export function RevisionPage() {
             ) : (
               <RefreshCw className="h-3.5 w-3.5" />
             )}
-            Generate revision
+            {t("revision.generateRevision")}
           </Button>
         </CardContent>
       </Card>
@@ -89,7 +91,7 @@ export function RevisionPage() {
       {error ? (
         <Card>
           <CardContent className="p-4 text-[13px] text-rose-300/90">
-            Revision could not load: {error}
+            {t("revision.revisionCouldNotLoad", { error })}
           </CardContent>
         </Card>
       ) : null}
@@ -99,9 +101,9 @@ export function RevisionPage() {
         {/* ── Weak topic queue ── */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle>Weak-topic queue</CardTitle>
+            <CardTitle>{t("revision.weakTopicQueue")}</CardTitle>
             <p className="text-[12px] text-slate-500">
-              These topics come from quiz scores below 60%.
+              {t("revision.weakTopicQueueHint")}
             </p>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -114,12 +116,12 @@ export function RevisionPage() {
                   className="flex w-full items-center justify-between gap-3 rounded-xl border border-white/[0.07] bg-white/[0.04] px-3.5 py-3 text-left transition hover:border-primary/30 hover:bg-primary/[0.08]"
                 >
                   <span className="text-[13px] font-medium text-white">{item}</span>
-                  <Badge variant="warning">Revise</Badge>
+                  <Badge variant="warning">{t("revision.revise")}</Badge>
                 </button>
               ))
             ) : (
               <div className="rounded-xl border border-dashed border-white/[0.08] p-5 text-[13px] leading-relaxed text-slate-500">
-                No weak topic yet. Submit a quiz and this queue will become personalized.
+                {t("revision.noWeakTopicQueue")}
               </div>
             )}
           </CardContent>
@@ -130,9 +132,9 @@ export function RevisionPage() {
           <CardHeader className="pb-3">
             <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <CardTitle>{revision?.topic || "Revision plan"}</CardTitle>
+                <CardTitle>{revision?.topic || t("revision.revisionPlan")}</CardTitle>
                 <p className="mt-1.5 text-[12px] text-slate-500">
-                  Beginner-friendly notes, examples, and quick checks.
+                  {t("revision.notesExamplesChecks")}
                 </p>
               </div>
               {revision ? <Badge>{revision.difficulty}</Badge> : null}
@@ -180,7 +182,7 @@ export function RevisionPage() {
               </>
             ) : (
               <div className="rounded-xl border border-dashed border-white/[0.08] p-5 text-[13px] leading-relaxed text-slate-500">
-                Loading revision plan...
+                {t("revision.loadingRevisionPlan")}
               </div>
             )}
           </CardContent>
